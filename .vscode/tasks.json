@@ -1,0 +1,8 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "Compose Up",   "type": "shell", "command": "cd compose && docker compose up -d" },
+    { "label": "Compose Down", "type": "shell", "command": "cd compose && docker compose down" },
+    { "label": "NR Logs",      "type": "shell", "command": "cd compose && docker compose logs -f nodered" }
+  ]
+}

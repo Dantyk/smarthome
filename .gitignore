@@ -1,0 +1,6 @@
+flows/**/flows_cred.json
+compose/.env
+secrets/
+*.log
+dist/
+tmp/

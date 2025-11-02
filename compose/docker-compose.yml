@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports: ["1883:1883"]
+    volumes:
+      - ./config/mosquitto:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+  nodered:
+    image: nodered/node-red:latest
+    restart: unless-stopped
+    ports: ["1880:1880"]
+    depends_on: [mosquitto]
+    environment: [ "TZ=Europe/Bratislava" ]
+    volumes:
+      - ../flows/nodered:/data
+      - ./config/nodered/settings.js:/data/settings.js:ro
+  baikal:
+    image: ckulka/baikal:0.10.1-apache
+    restart: unless-stopped
+    ports: ["8800:80"]
+    volumes:
+      - baikal_data:/var/www/baikal
+  zwavejsui:
+    image: zwavejs/zwave-js-ui:latest
+    restart: unless-stopped
+    ports: ["8091:8091"]
+    devices: [ "/dev/ttyACM0:/dev/ttyACM0" ]   # uprav podľa RPi
+    environment: [ "TZ=Europe/Bratislava" ]
+    volumes:
+      - zwave_data:/usr/src/app/store
+volumes:
+  mosquitto_data:
+  baikal_data:
+  zwave_data:
