@@ -1,0 +1,20 @@
+{
+    "diag_seen": {
+        "targets": {
+            "spalna": true,
+            "detska": true,
+            "obyvacka": true,
+            "kuchyna": true,
+            "kupelna": true
+        },
+        "enabled": {
+            "spalna": true,
+            "detska": true,
+            "obyvacka": true,
+            "kuchyna": true,
+            "kupelna": true
+        },
+        "weather": true,
+        "hourly": true
+    }
+}

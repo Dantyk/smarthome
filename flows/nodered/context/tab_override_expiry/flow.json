@@ -1,0 +1,19 @@
+{
+    "override_map": {
+        "spalna": {
+            "active": false
+        },
+        "detska": {
+            "active": false
+        },
+        "obyvacka": {
+            "active": false
+        },
+        "kuchyna": {
+            "active": false
+        },
+        "living": {
+            "active": false
+        }
+    }
+}

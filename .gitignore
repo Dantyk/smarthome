@@ -4,3 +4,6 @@ secrets/
 *.log
 dist/
 tmp/
+ui/smarthome-ui/node_modules
+ui/smarthome-ui/.next
+flows/nodered/node_modules

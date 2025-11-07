@@ -1,0 +1,37 @@
+{
+    "escalation_safety": {
+        "fire-kuchyna-1762252912173": {
+            "message": {
+                "routeKey": "safety.fire",
+                "category": "safety",
+                "eventType": "fire",
+                "location": "kuchyna",
+                "severity": "critical",
+                "channels": [
+                    "push",
+                    "sms"
+                ],
+                "recipients": [
+                    "admin"
+                ],
+                "siren": true,
+                "escalate": {
+                    "after_s": 60,
+                    "channels": [
+                        "sms"
+                    ]
+                },
+                "timestamp": "2025-11-04T10:41:52.172Z",
+                "payload": {
+                    "detected": true,
+                    "temp": 85
+                },
+                "alertId": "safety.fire-kuchyna-1762252912173"
+            },
+            "escalateAt": 1762252972173,
+            "escalateChannels": [
+                "sms"
+            ]
+        }
+    }
+}
