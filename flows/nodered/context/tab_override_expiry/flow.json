@@ -4,9 +4,7 @@
             "active": false
         },
         "detska": {
-            "active": true,
-            "value": 23.1,
-            "until": "2025-11-08T22:55:50.358Z"
+            "active": false
         },
         "obyvacka": {
             "active": false

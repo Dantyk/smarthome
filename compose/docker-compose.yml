@@ -44,6 +44,16 @@ services:
     entrypoint: ["/bin/sh", "/scripts/baikal-init.sh"]
     restart: "no"
   
+  apprise:
+    image: caronc/apprise:latest
+    restart: unless-stopped
+    ports: ["8000:8000"]
+    profiles: [notify]
+    environment:
+      - APPRISE_STATELESS_URLS=pover://${PUSHOVER_USER}@${PUSHOVER_TOKEN}
+    volumes:
+      - apprise_config:/config
+  
   zwavejsui:
     image: zwavejs/zwave-js-ui:latest
     restart: unless-stopped
@@ -65,4 +75,5 @@ services:
 volumes:
   mosquitto_data:
   baikal_data:
+  apprise_config:
   zwave_data:
