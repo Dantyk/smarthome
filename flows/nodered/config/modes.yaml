@@ -90,10 +90,10 @@ modes:
     room_regime:
       "*": PRACOVNY
   
-  hosty:
+  navsteva:
     priority: 60
     activation:
-      calendar_mode: hosty
+      calendar_mode: navsteva
     room_regime:
       bedroom: VIKEND
       living: PRACOVNY
