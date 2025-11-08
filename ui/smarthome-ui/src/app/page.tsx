@@ -63,6 +63,39 @@ export default function Home() {
     kupelna: 1
   });
   
+  // Sync slider state with incoming boost target temps from MQTT
+  useEffect(() => {
+    ROOMS.forEach(room => {
+      const rm = rooms[room];
+      if (rm?.boostActive && rm.boostTargetTemp !== undefined && !isNaN(rm.boostTargetTemp)) {
+        setSliders(prev => {
+          // Only update if different to avoid infinite loops
+          if (prev[room] !== rm.boostTargetTemp) {
+            return { ...prev, [room]: rm.boostTargetTemp };
+          }
+          return prev;
+        });
+      }
+    });
+  }, [rooms]);
+  
+  // Initialize sliders from MQTT data (no UI-invented defaults)
+  useEffect(() => {
+    ROOMS.forEach(room => {
+      const rm = rooms[room];
+      
+      // Only set slider if we have actual MQTT data
+      if (sliders[room] === undefined) {
+        if (rm?.boostActive && rm.boostTargetTemp !== undefined && !isNaN(rm.boostTargetTemp)) {
+          setSliders(prev => ({ ...prev, [room]: rm.boostTargetTemp }));
+        } else if (rm?.target !== undefined && !isNaN(rm.target)) {
+          setSliders(prev => ({ ...prev, [room]: rm.target }));
+        }
+        // If no MQTT data, don't set anything - wait for Node-RED defaults
+      }
+    });
+  }, [rooms]);
+  
   const getRemainingTime = (overrideUntil?: string) => {
     if (!overrideUntil) return null;
     const now = new Date();
@@ -74,8 +107,11 @@ export default function Home() {
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
   
-  const getRoomIcon = (room: string, current?: number, target?: number, override?: boolean) => {
-    // Show burst/frost icons ONLY when override is active
+  const getRoomIcon = (room: string, current?: number, target?: number, override?: boolean, boostActive?: boolean) => {
+    // Don't change icon during boost - boost status is shown via AUTO button
+    if (boostActive) return ROOM_ICONS[room];
+    
+    // Show burst/frost icons ONLY when legacy override is active (not boost)
     if (!override) return ROOM_ICONS[room];
     if (!current || !target) return ROOM_ICONS[room];
     
@@ -86,34 +122,64 @@ export default function Home() {
   
   const activateBurst = (room: string, targetTemp: number, duration: number) => {
     const until = new Date(Date.now() + duration * 60 * 60 * 1000).toISOString();
-    // Compatibility: publish to multiple topics that downstream flows môžu použiť
+    
+    // NEW: Send boost messages (duration in minutes!)
+    const durationMinutes = Math.round(duration * 60);
+    publish(`virt/boost/${room}/minutes`, String(durationMinutes), true);
+    publish(`virt/boost/${room}/target_temp`, String(targetTemp), true);
+    
+    // LEGACY: Keep old override topics for compatibility
     publish(`virt/room/${room}/override_request`, { value: targetTemp, duration }, true);
     publish(`cmd/hvac/${room}/override_duration`, String(duration), true);
     publish(`cmd/hvac/${room}/setpoint`, String(targetTemp), true);
     publish(`cmd/hvac/${room}/override`, { active: true, value: targetTemp, duration, until }, true);
-    // Optimisticky nastav override v UI, aby hneď vidieť trvanie
+    
+    // Optimistically update UI state
     useHouse.setState((s: any) => ({
       rooms: {
         ...s.rooms,
-        [room]: { ...s.rooms[room], override: true, overrideValue: targetTemp, overrideUntil: until }
+        [room]: { 
+          ...s.rooms[room], 
+          override: true, 
+          overrideValue: targetTemp, 
+          overrideUntil: until,
+          boostActive: true,
+          boostMinutes: durationMinutes,
+          boostTargetTemp: targetTemp
+        }
       }
     }));
-    console.log(`[UI] Burst activated for ${room}: ${targetTemp}°C for ${duration}h`);
+    console.log(`[UI] Burst activated for ${room}: ${targetTemp}°C for ${duration}h (${durationMinutes}min)`);
   };
   
   const cancelOverride = (room: string) => {
+    // Clear boost state
+    publish(`virt/boost/${room}/minutes`, '0', true);
+    publish(`virt/boost/${room}/target_temp`, '0', true);
+    
+    // Clear legacy override
     publish(`cmd/hvac/${room}/cancel_override`, 'true', false);
     publish(`virt/room/${room}/override_request`, { active: false }, true);
     const defaultTemp = rooms[room]?.target ?? 21;
     publish(`cmd/hvac/${room}/setpoint`, String(defaultTemp), true);
     setSliders(prev => ({ ...prev, [room]: defaultTemp }));
+    
+    // Update UI state
     useHouse.setState((s: any) => ({
       rooms: {
         ...s.rooms,
-        [room]: { ...s.rooms[room], override: false, overrideUntil: undefined, overrideValue: undefined }
+        [room]: { 
+          ...s.rooms[room], 
+          override: false, 
+          overrideUntil: undefined, 
+          overrideValue: undefined,
+          boostActive: false,
+          boostMinutes: 0,
+          boostTargetTemp: undefined
+        }
       }
     }));
-    console.log(`[UI] Override cancelled for ${room}`);
+    console.log(`[UI] Override and boost cancelled for ${room}`);
   };
   
   const toggleHvac = (room: string, enabled: boolean) => {
@@ -136,6 +202,15 @@ export default function Home() {
       padding: 16,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .weather-info { flex-direction: column !important; gap: 8px !important; }
+          .header-controls { flex-direction: column !important; gap: 8px !important; align-items: flex-end !important; }
+          .room-title { font-size: 16px !important; }
+          .temp-current { font-size: 32px !important; }
+          .temp-target { font-size: 20px !important; }
+        }
+      `}</style>
       <div style={{
         background: colors.headerBg,
         backdropFilter: 'blur(10px)',
@@ -146,7 +221,9 @@ export default function Home() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        border: `1px solid ${colors.border}`
+        border: `1px solid ${colors.border}`,
+        flexWrap: 'wrap',
+        gap: 12
       }}>
         <span style={{ fontSize: 20, fontWeight: 700, color: colors.currentTemp }}>
           🏠 SmartHome
@@ -154,6 +231,7 @@ export default function Home() {
         
         <div 
           onClick={() => router.push('/weather')}
+          className="weather-info"
           style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -186,7 +264,7 @@ export default function Home() {
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div className="header-controls" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <button
             onClick={toggleTheme}
             style={{
@@ -199,7 +277,7 @@ export default function Home() {
               color: colors.text
             }}
           >
-            {theme === 'dark' ? '☀️' : '��'}
+            {theme === 'dark' ? '☀️' : '🌙'}
           </button>
           
           <div style={{ fontSize: 14, color: colors.textSecondary }}>
@@ -219,8 +297,18 @@ export default function Home() {
           const hasData = rm.current !== undefined;
           const currentValue = rm.current ?? 0;
           const targetValue = Number(isFinite(Number(rm.target)) ? Number(rm.target) : 21);
-          const sliderValue = Number(isFinite(Number(sliders[r])) ? Number(sliders[r]) : targetValue);
-          const icon = getRoomIcon(r, currentValue, targetValue, rm.override);
+          
+          // Use boost temp if active, otherwise use target or slider state
+          const boostActive = rm.boostActive ?? false;
+          const boostTemp = rm.boostTargetTemp ?? targetValue;
+          const boostMinutes = rm.boostMinutes ?? 0;
+          const effectiveTarget = boostActive ? boostTemp : targetValue;
+          
+          // Slider value: Use local slider state (synced via useEffect when boost MQTT arrives)
+          const sliderValue = sliders[r] !== undefined 
+            ? Number(sliders[r])
+            : effectiveTarget;
+          const icon = getRoomIcon(r, currentValue, effectiveTarget, rm.override, boostActive);
           const remaining = getRemainingTime(rm.overrideUntil);
           const isReadonly = config.readonly || false;
           const hvacEnabled = rm.hvacEnabled ?? true;
@@ -238,10 +326,15 @@ export default function Home() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <span style={{ fontSize: 32, pointerEvents: 'none' }}>{icon}</span>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: colors.text }}>
+                  <h3 className="room-title" style={{ margin: 0, fontSize: 18, fontWeight: 600, color: colors.text }}>
                     {ROOM_NAMES[r]}
                   </h3>
-                  {rm.override && remaining && (
+                  {boostActive && boostMinutes > 0 && (
+                    <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 500 }}>
+                      BOOST {boostMinutes}min
+                    </span>
+                  )}
+                  {!boostActive && rm.override && remaining && (
                     <span style={{ fontSize: 11, color: colors.currentTemp, fontWeight: 500 }}>
                       OVERRIDE {remaining}
                     </span>
@@ -261,24 +354,36 @@ export default function Home() {
                       onClick={() => toggleHvac(r, !hvacEnabled)}
                       title={hvacEnabled ? 'Vypnúť' : 'Zapnúť'}
                       style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
-                        padding: '4px 10px', borderRadius: 999,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '6px',
+                        borderRadius: 999,
                         border: `1px solid ${colors.border}`,
                         background: hvacEnabled ? '#064e3b' : '#3f3f46',
-                        color: 'white', cursor: 'pointer'
+                        cursor: 'pointer',
+                        minWidth: 48
                       }}
                     >
                       <span style={{
-                        display: 'inline-block', width: 28, height: 16,
-                        background: hvacEnabled ? '#10b981' : '#a1a1aa',
-                        borderRadius: 999, position: 'relative'
+                        display: 'inline-block',
+                        width: 36,
+                        height: 20,
+                        background: hvacEnabled ? '#10b981' : '#71717a',
+                        borderRadius: 999,
+                        position: 'relative',
+                        transition: 'background 0.2s'
                       }}>
                         <span style={{
-                          position: 'absolute', top: 2, left: hvacEnabled ? 14 : 2,
-                          width: 12, height: 12, background: 'white', borderRadius: '50%'
+                          position: 'absolute',
+                          top: 2,
+                          left: hvacEnabled ? 18 : 2,
+                          width: 16,
+                          height: 16,
+                          background: 'white',
+                          borderRadius: '50%',
+                          transition: 'left 0.2s'
                         }} />
                       </span>
-                      {hvacEnabled ? 'Zapnuté' : 'Vypnuté'}
                     </button>
                   )}
                 </div>
@@ -288,14 +393,12 @@ export default function Home() {
                 <div style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>
                   AKTUÁLNA TEPLOTA
                 </div>
-                <div style={{ fontSize: 40, fontWeight: 700, color: colors.currentTemp, lineHeight: 1 }}>
+                <div className="temp-current" style={{ fontSize: 40, fontWeight: 700, color: colors.currentTemp, lineHeight: 1 }}>
                   {hasData ? `${currentValue.toFixed(1)}°C` : '— °C'}
                 </div>
-                {rm.humidity !== undefined && (
-                  <div style={{ fontSize: 16, color: colors.textSecondary, marginTop: 8 }}>
-                    💧 {rm.humidity.toFixed(0)}%
-                  </div>
-                )}
+                <div style={{ fontSize: 16, color: colors.textSecondary, marginTop: 8, minHeight: 24 }}>
+                  {rm.humidity !== undefined ? `💧 ${rm.humidity.toFixed(0)}%` : '\u00A0'}
+                </div>
               </div>
 
               {!isReadonly && (
@@ -304,13 +407,13 @@ export default function Home() {
                     <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 4 }}>
                       CIEĽ
                     </div>
-                    <div style={{ fontSize: 24, fontWeight: 600, color: colors.targetTemp }}>
+                    <div className="temp-target" style={{ fontSize: 24, fontWeight: 600, color: colors.targetTemp }}>
                       {sliderValue.toFixed(1)}°C
                     </div>
                   </div>
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 6 }}>
-                      ⏱️ Burst
+                      ⏱️ Burst {boostActive ? `(${boostMinutes}min zostáva)` : ''}
                     </div>
                     <select
                       value={roomBurstDuration}
@@ -320,7 +423,7 @@ export default function Home() {
                         // Inform backend about selected duration
                         publish(`cmd/hvac/${r}/override_duration`, String(newDur), true);
                         // If override beží, predĺž/aktualizuj s aktuálnym cieľom
-                        if (rm.override) {
+                        if (rm.override || boostActive) {
                           activateBurst(r, sliderValue, newDur);
                         }
                       }}
@@ -363,17 +466,17 @@ export default function Home() {
                       style={{
                         flex: 1,
                         padding: '10px',
-                        background: rm.override ? '#10b981' : colors.targetTemp,
+                        background: (boostActive || rm.override) ? '#10b981' : colors.targetTemp,
                         border: 'none',
                         borderRadius: 8,
                         cursor: hasData ? 'pointer' : 'not-allowed',
-                        fontSize: rm.override && remaining ? 10 : 13,
+                        fontSize: (boostActive && boostMinutes > 0) || (rm.override && remaining) ? 10 : 13,
                         fontWeight: 700,
                         color: 'white',
                         opacity: hasData ? 1 : 0.5
                       }}
                     >
-                      {rm.override && remaining ? `⏱️ ${remaining}` : 'AUTO'}
+                      {boostActive && boostMinutes > 0 ? `⏱️ ${boostMinutes}min` : (rm.override && remaining ? `⏱️ ${remaining}` : 'AUTO')}
                     </button>
                     <button
                       onClick={() => {

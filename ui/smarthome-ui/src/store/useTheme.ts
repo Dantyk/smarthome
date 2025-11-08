@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 type Theme = 'light' | 'dark';
 
@@ -8,6 +8,53 @@ interface ThemeStore {
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
 }
+
+// Custom storage that uses both localStorage and cookies for persistence
+const cookieStorage = {
+  getItem: (name: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    
+    // Try localStorage first
+    try {
+      const item = localStorage.getItem(name);
+      if (item) return item;
+    } catch (e) {
+      console.warn('[Theme] localStorage not available:', e);
+    }
+    
+    // Fallback to cookies
+    const matches = document.cookie.match(new RegExp(
+      '(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'
+    ));
+    return matches ? decodeURIComponent(matches[1]) : null;
+  },
+  setItem: (name: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem(name, value);
+    } catch (e) {
+      console.warn('[Theme] localStorage not available:', e);
+    }
+    
+    // Also save to cookies (expires in 1 year)
+    const expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 1);
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+  },
+  removeItem: (name: string): void => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      localStorage.removeItem(name);
+    } catch (e) {
+      console.warn('[Theme] localStorage not available:', e);
+    }
+    
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  },
+};
 
 export const useTheme = create<ThemeStore>()(
   persist(
@@ -18,6 +65,7 @@ export const useTheme = create<ThemeStore>()(
     }),
     {
       name: 'smarthome-theme',
+      storage: createJSONStorage(() => cookieStorage),
     }
   )
 );

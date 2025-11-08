@@ -7,3 +7,20 @@ tmp/
 ui/smarthome-ui/node_modules
 ui/smarthome-ui/.next
 flows/nodered/node_modules
+
+# Node-RED runtime súbory
+flows/nodered/.config.*.json
+flows/nodered/context/
+flows/nodered/*.backup_*
+
+# UI production env
+ui/smarthome-ui/.env.production
+
+# Dočasné súbory
+compose/scripts/google-*
+compose/scripts/baikal-setup.sh
+compose/scripts/vdirsyncer-*
+compose/config/vdirsyncer/
+
+# Token súbory
+*.token.json

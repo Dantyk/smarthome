@@ -1,0 +1,269 @@
+# SmartHome - Inteligentný Systém Riadenia Vykurovania
+
+Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teploty, režimami a kalendárovým ovládaním.
+
+## 🏗️ Architektúra
+
+### Komponenty
+
+- **Node-RED** - Hlavná riadiaca logika, kalendárová synchronizácia, MQTT orchestrácia
+- **Mosquitto MQTT** - Message broker pre komunikáciu medzi komponentmi
+- **Baïkal CalDAV** - Lokálny kalendárový server pre manuálne udalosti
+- **Next.js UI** - Webové rozhranie pre ovládanie a monitoring
+- **Z-Wave JS UI** - Ovládanie Z-Wave termostatov a senzorov
+- **InfluxDB + Grafana** - Metrics a vizualizácie (voliteľné)
+
+### Dátový tok
+
+```
+Google Calendar ──┐
+                  ├──> Node-RED ──> MQTT ──> Termostaty
+Baïkal CalDAV ───┘         │
+                           └──> Next.js UI
+```
+
+## 📋 Požiadavky
+
+- Raspberry Pi (alebo iný Linux server)
+- Docker + Docker Compose
+- Node-RED kompatibilné termostaty (Z-Wave, Zigbee, alebo MQTT)
+
+## 🚀 Inštalácia
+
+1. **Klonuj repozitár:**
+   ```bash
+   git clone https://github.com/Dantyk/smarthome.git
+   cd smarthome
+   ```
+
+2. **Nakonfiguruj prostredie:**
+   ```bash
+   cd compose
+   cp .env.example .env
+   nano .env  # Nastav porty, API kľúče, zariadenia
+   ```
+
+3. **Spusti služby:**
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Dokončí Baïkal setup:**
+   - Otvor: `http://localhost:8800/admin/`
+   - Admin heslo: `admin` (alebo podľa `.env`)
+   - Vytvor používateľa: `smarthome` / `smarthome`
+
+5. **Otvor Node-RED:**
+   - URL: `http://localhost:1880`
+   - Import flows z `/flows/nodered/flows.json`
+
+6. **Prístup k UI:**
+   - URL: `http://localhost:8088`
+
+## ⚙️ Konfigurácia
+
+### Režimy (`/config/modes.yaml`)
+
+Systém podporuje 3 základné režimy:
+
+- **vikend** - Komfortné teploty cez celý deň
+- **pracovny_den** - Úsporný režim cez deň (práca), komfort večer
+- **navsteva** - Špeciálny režim pri hosťoch
+
+Každý režim definuje:
+- **Priority** - Vyššia priorita preváži nižšiu
+- **Activation** - Podmienky aktivácie (čas, deň v týždni, kalendár)
+- **Room regime** - Rozloženie teplôt pre jednotlivé miestnosti
+
+### Teplotné režimy
+
+Každá miestnosť môže mať 3 teplotné profily:
+
+- **PRACOVNY** - Úsporný (16°C cez deň, 21°C večer)
+- **VIKEND** - Komfortný (21°C celý deň)
+- **SPALNA_NOC** - Nočný (19°C v noci, 21°C ráno/večer)
+
+## 📅 Kalendárové udalosti
+
+Systém podporuje riadenie cez kalendár pomocou DSL (Domain Specific Language) v názve udalosti.
+
+### SMH MODE - Prepnutie režimu
+
+Aktivuje špecifický režim počas trvania udalosti.
+
+**Syntax:**
+```
+SMH MODE=nazov_rezimu
+```
+
+**Príklady:**
+```
+SMH MODE=navsteva
+SMH MODE=vikend
+SMH MODE=pracovny_den
+```
+
+**Použitie:**
+- Vytvor udalosť v Google Calendar alebo Baïkal
+- Názov: `SMH MODE=navsteva`
+- Čas: Dnes 14:00 - 18:00
+- **Výsledok**: Počas návštevy (14-18h) sa aktivuje režim "navsteva"
+
+---
+
+### SMH BOOST - Dočasné zvýšenie teploty
+
+Zvýši teplotu v konkrétnej miestnosti na určenú hodnotu.
+
+**Syntax:**
+```
+SMH BOOST room=MIESTNOST temp=TEPLOTA dur=MINUTY
+```
+
+**Parametre:**
+- `room` - povinné: `spalna`, `detska`, `obyvacka`, `kuchyna`, `kupelna`
+- `temp` - voliteľné: cieľová teplota (°C), default = aktuálna + 2°C
+- `dur` - voliteľné: trvanie v minútach, default = 60
+
+**Príklady:**
+```
+SMH BOOST room=spalna temp=23 dur=120
+SMH BOOST room=kupelna temp=24
+SMH BOOST room=detska
+```
+
+**Použitie:**
+- Rýchle ohriatie kúpeľne pred sprchou
+- Komfort v spálni pred spaním
+- Aktivuje sa okamžite po vytvorení udalosti
+
+---
+
+### SMH OFFSET - Úprava teploty
+
+Upraví cieľovú teplotu o zadaný offset (relatívna zmena).
+
+**Syntax:**
+```
+SMH OFFSET room=MIESTNOST +/-HODNOTA
+```
+
+**Parametre:**
+- `room` - povinné: názov miestnosti
+- `offset` - povinné: relatívna zmena teploty (napr. `+2.5`, `-1`)
+
+**Príklady:**
+```
+SMH OFFSET room=kuchyna -1
+SMH OFFSET room=detska +2.5
+SMH OFFSET room=obyvacka -0.5
+```
+
+**Použitie:**
+- Jemná korekcia teploty bez zmeny celého režimu
+- Offset platí **počas trvania kalendárovej udalosti**
+- Pre trvalú zmenu použi MQTT: `mosquitto_pub -t 'virt/offset/kuchyna/value' -m '-1' -r`
+
+---
+
+### Kombinácie
+
+Môžeš kombinovať viacero udalostí naraz:
+
+**Scenár: Víkendová párty**
+1. `SMH MODE=navsteva` (Sobota 14:00 - 22:00)
+2. `SMH BOOST room=obyvacka temp=22` (Sobota 13:30 - 15:00)
+3. `SMH OFFSET room=kupelna +1` (Sobota 14:00 - 22:00)
+
+**Výsledok:**
+- Pred príchodom hostí sa obývačka prehreje
+- Počas návštevy bude aktívny režim "navsteva"
+- Kúpeľňa bude mať o 1°C vyššiu teplotu
+
+## 🌡️ Weather Correlation
+
+Systém automaticky upravuje cieľové teploty podľa vonkajšej teploty a vetra.
+
+**Konfigurácia:** `/config/modes.yaml` → `weather.correlation`
+
+**Koeficienty:**
+- `kT` (Temperature) - Čím chladnejšie vonku, tým viac topiť (záporná hodnota!)
+- `kW` (Wind) - Čím silnejší vietor, tým viac topiť (záporná hodnota!)
+- `kD` (Direction) - Váha smeru vetra (severný vietor = vyššie váhy)
+
+**Príklad:**
+```yaml
+spalna:
+  kT: -0.08   # Pri -10°C vonku → +0.8°C vnútri
+  kW: -0.03   # Pri 20km/h vetre → +0.6°C vnútri
+  dir_weights:
+    north: 1.5   # Severný vietor má väčší vplyv
+    south: 0.3   # Južný vietor má menší vplyv
+```
+
+## 🔧 Údržba
+
+### Logy
+```bash
+# Všetky služby
+docker compose logs -f
+
+# Node-RED
+docker compose logs -f nodered
+
+# Google Calendar sync
+docker compose logs nodered | grep "\[gcal\]"
+```
+
+### Reštart služieb
+```bash
+docker compose restart nodered
+docker compose restart baikal
+```
+
+### Zálohovanie
+```bash
+# Baïkal kalendár
+docker compose exec baikal tar czf /tmp/baikal-backup.tar.gz /var/www/baikal/Specific
+
+# Node-RED flows
+cp flows/nodered/flows.json flows/nodered/flows.json.backup
+```
+
+## 📊 MQTT Topics
+
+### Monitoring (read-only)
+- `room/{miestnost}/temp/measured` - Nameraná teplota
+- `room/{miestnost}/temp/target` - Cieľová teplota
+- `virt/mode/current` - Aktuálny režim
+
+### Ovládanie (write)
+- `virt/boost/{miestnost}/minutes` - Spustiť boost (trvanie v minútach)
+- `virt/boost/{miestnost}/target_temp` - Boost cieľová teplota
+- `virt/offset/{miestnost}/value` - Nastaviť offset teploty
+- `internal/recalc_mode` - Prepočítať režim
+
+## 🛡️ Bezpečnosť
+
+- **Nikdy necommituj `.env` súbor!** (obsahuje API kľúče)
+- Zmeň defaultné heslá pre Baïkal admin
+- Používaj HTTPS pre vzdialený prístup
+- Firewall: Otvor len potrebné porty (1880, 8800, 8088)
+
+## 📚 Dokumentácia
+
+- [Mode Configuration](docs/modes-config.md)
+- [Weather Correlation](docs/weather-correlation.md)
+- [MQTT API](docs/mqtt-api.md)
+
+## 🤝 Prispievanie
+
+Pull requesty sú vítané! Pre väčšie zmeny najprv otvor issue.
+
+## 📄 Licencia
+
+MIT License - Voľne použiteľné pre osobné i komerčné účely.
+
+## 👨‍💻 Autor
+
+David Komanuch - [@Dantyk](https://github.com/Dantyk)

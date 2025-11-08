@@ -12,16 +12,39 @@ services:
     restart: unless-stopped
     ports: ["1880:1880"]
     depends_on: [mosquitto]
-    environment: [ "TZ=Europe/Bratislava" ]
+    environment:
+      - TZ=Europe/Bratislava
+      - BAIKAL_BASE_URL=http://baikal:80/dav.php
+      - BAIKAL_USER=smarthome
+      - BAIKAL_PASS=smarthome
+      - BAIKAL_CAL_ID=default
+      - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID}
     volumes:
       - ../flows/nodered:/data
       - ./config/nodered/settings.js:/data/settings.js:ro
+      - ../config:/config:ro
   baikal:
     image: ckulka/baikal:0.10.1-apache
     restart: unless-stopped
     ports: ["8800:80"]
     volumes:
       - baikal_data:/var/www/baikal
+  
+  baikal-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - baikal
+    environment:
+      - BAIKAL_URL=http://baikal:80
+      - BAIKAL_USER=smarthome
+      - BAIKAL_PASS=smarthome
+      - BAIKAL_CALENDAR_NAME=default
+    volumes:
+      - ./scripts/baikal-init.sh:/scripts/baikal-init.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/baikal-init.sh"]
+    restart: "no"
+  
   zwavejsui:
     image: zwavejs/zwave-js-ui:latest
     restart: unless-stopped
@@ -30,6 +53,16 @@ services:
     environment: [ "TZ=Europe/Bratislava" ]
     volumes:
       - zwave_data:/usr/src/app/store
+  ui:
+    image: compose-ui
+    build:
+      context: ../ui/smarthome-ui
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports: ["8088:3000"]
+    depends_on: [mosquitto]
+    environment:
+      - NODE_ENV=production
 volumes:
   mosquitto_data:
   baikal_data:

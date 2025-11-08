@@ -22,6 +22,27 @@ export default function WeatherPage() {
       padding: 16,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .weather-hero { 
+            flex-direction: column !important; 
+            text-align: center !important;
+          }
+          .weather-hero-left { 
+            flex-direction: column !important; 
+            align-items: center !important;
+          }
+          .weather-hero-right { 
+            text-align: center !important; 
+          }
+          .weather-temp { 
+            font-size: 42px !important; 
+          }
+          .hourly-forecast {
+            padding-bottom: 12px !important;
+          }
+        }
+      `}</style>
       {/* Top Navigation */}
       <div style={{
         background: colors.headerBg,
@@ -33,7 +54,9 @@ export default function WeatherPage() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        border: `1px solid ${colors.border}`
+        border: `1px solid ${colors.border}`,
+        flexWrap: 'wrap',
+        gap: 12
       }}>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <Link href="/" style={{ fontSize: 16, color: colors.textSecondary, textDecoration: 'none' }}>
@@ -61,97 +84,66 @@ export default function WeatherPage() {
         </button>
       </div>
 
-      {/* Weather Hero Section */}
-      <div style={{
+      {/* Weather Hero Section - Compact Design */}
+      <div className="weather-hero" style={{
         background: colors.weatherGradient,
         borderRadius: 16,
-        padding: 40,
-        marginBottom: 24,
-        textAlign: 'center',
+        padding: '24px 32px',
+        marginBottom: 20,
         boxShadow: theme === 'dark' 
           ? '0 8px 24px rgba(0,0,0,0.5)' 
           : '0 4px 16px rgba(0,0,0,0.15)',
-        border: `1px solid ${colors.border}`
+        border: `1px solid ${colors.border}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 24
       }}>
-        {weather?.icon && (
-          <img
-            src={`https://openweathermap.org/img/wn/${weather.icon}@4x.png`}
-            alt="Weather"
-            style={{ width: 160, height: 160 }}
-          />
-        )}
-        <div style={{
-          fontSize: 72,
-          fontWeight: 700,
-          color: 'white',
-          marginTop: 16
-        }}>
-          {weather?.temp ? `${weather.temp.toFixed(1)}°C` : '—'}
-        </div>
-        <div style={{
-          fontSize: 24,
-          color: 'rgba(255,255,255,0.9)',
-          marginTop: 8,
-          textTransform: 'capitalize'
-        }}>
-          {weather?.description || 'Načítavam počasie z MQTT...'}
-        </div>
-        <div style={{
-          fontSize: 16,
-          color: 'rgba(255,255,255,0.7)',
-          marginTop: 12
-        }}>
-          📍 Bratislava, SK
-        </div>
-      </div>
-
-      {/* Weather Details Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: 16,
-        marginBottom: 24
-      }}>
-        {/* Humidity Card */}
-        <div style={{
-          background: colors.cardBg,
-          backdropFilter: 'blur(10px)',
-          borderRadius: 12,
-          padding: 24,
-          textAlign: 'center',
-          border: `1px solid ${colors.border}`,
-          boxShadow: theme === 'dark' 
-            ? '0 4px 12px rgba(0,0,0,0.4)' 
-            : '0 2px 8px rgba(0,0,0,0.08)'
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>💧</div>
-          <div style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 8 }}>
-            Vlhkosť
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: colors.targetTemp }}>
-            {weather?.humidity ?? '—'}%
+        <div className="weather-hero-left" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          {weather?.icon && (
+            <img
+              src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
+              alt="Weather"
+              style={{ width: 100, height: 100 }}
+            />
+          )}
+          <div>
+            <div className="weather-temp" style={{
+              fontSize: 56,
+              fontWeight: 700,
+              color: 'white',
+              lineHeight: 1
+            }}>
+              {weather?.temp ? `${weather.temp.toFixed(1)}°C` : '—'}
+            </div>
+            <div style={{
+              fontSize: 18,
+              color: 'rgba(255,255,255,0.9)',
+              marginTop: 8,
+              textTransform: 'capitalize'
+            }}>
+              {weather?.description || 'Načítavam...'}
+            </div>
           </div>
         </div>
-
-        {/* Wind Speed Card */}
-        <div style={{
-          background: colors.cardBg,
-          backdropFilter: 'blur(10px)',
-          borderRadius: 12,
-          padding: 24,
-          textAlign: 'center',
-          border: `1px solid ${colors.border}`,
-          boxShadow: theme === 'dark' 
-            ? '0 4px 12px rgba(0,0,0,0.4)' 
-            : '0 2px 8px rgba(0,0,0,0.08)'
+        
+        <div className="weather-hero-right" style={{ 
+          textAlign: 'right',
+          color: 'rgba(255,255,255,0.8)',
+          fontSize: 14
         }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>💨</div>
-          <div style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 8 }}>
-            Vietor
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: '#10b981' }}>
-            {weather?.wind_speed ? `${weather.wind_speed.toFixed(1)}` : '—'}
-            {weather?.wind_speed && <span style={{ fontSize: 16 }}> km/h</span>}
+          <div style={{ marginBottom: 8 }}>📍 Bratislava, SK</div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>Vlhkosť</div>
+              <div style={{ fontSize: 20, fontWeight: 600 }}>{weather?.humidity ?? '—'}%</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>Vietor</div>
+              <div style={{ fontSize: 20, fontWeight: 600 }}>
+                {weather?.wind_speed ? `${weather.wind_speed.toFixed(1)}` : '—'} km/h
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -161,43 +153,59 @@ export default function WeatherPage() {
         background: colors.cardBg,
         backdropFilter: 'blur(10px)',
         borderRadius: 12,
-        padding: 24,
+        padding: 20,
         border: `1px solid ${colors.border}`,
         boxShadow: theme === 'dark' 
           ? '0 4px 12px rgba(0,0,0,0.4)' 
           : '0 2px 8px rgba(0,0,0,0.08)'
       }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: 18, fontWeight: 600, color: colors.text }}>
-          Predpoveď na najbližšie hodiny
+        <h3 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: 600, color: colors.text }}>
+          📅 Predpoveď na najbližšie hodiny
         </h3>
         {weather?.hourly && weather.hourly.length > 0 ? (
-          <div style={{ display: 'flex', overflowX: 'auto', gap: 12, paddingBottom: 6 }}>
+          <div className="hourly-forecast" style={{ display: 'flex', overflowX: 'auto', gap: 10, paddingBottom: 6 }}>
             {weather.hourly.map((h, i) => (
               <div key={i} style={{
                 border: `1px solid ${colors.border}`,
-                borderRadius: 10,
-                padding: 12,
+                borderRadius: 8,
+                padding: '10px 12px',
                 textAlign: 'center',
-                background: 'rgba(255,255,255,0.03)',
-                minWidth: 110
-              }}>
-                <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 6 }}>
-                  {String(h.time)}
+                background: i === 0 ? 'rgba(96, 165, 250, 0.1)' : 'rgba(255,255,255,0.03)',
+                minWidth: 90,
+                transition: 'transform 0.2s, background 0.2s',
+                cursor: 'default'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.background = 'rgba(96, 165, 250, 0.15)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = i === 0 ? 'rgba(96, 165, 250, 0.1)' : 'rgba(255,255,255,0.03)';
+              }}
+              >
+                <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4, fontWeight: 600 }}>
+                  {h.time || '—'}
                 </div>
                 <img 
                   src={`https://openweathermap.org/img/wn/${h.icon}.png`} 
                   alt="ico" 
-                  style={{ width: 42, height: 42 }}
+                  style={{ width: 36, height: 36, margin: '4px 0' }}
                 />
-                <div style={{ fontSize: 18, fontWeight: 700, color: colors.text, marginTop: 6 }}>
-                  {Number(h.temp).toFixed(1)}°C
+                <div style={{ fontSize: 16, fontWeight: 700, color: colors.text }}>
+                  {Number(h.temp).toFixed(0)}°
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: 14, color: colors.textSecondary }}>
-            Zatiaľ neprišli dáta. Over topic "virt/weather/hourly".
+          <div style={{ 
+            fontSize: 13, 
+            color: colors.textSecondary,
+            textAlign: 'center',
+            padding: '20px 0'
+          }}>
+            Načítavam predpoveď z MQTT...
           </div>
         )}
       </div>

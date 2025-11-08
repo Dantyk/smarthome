@@ -10,6 +10,9 @@ type RoomState = {
   overrideUntil?: string; // ISO timestamp when override ends
   readonly?: boolean; // Cannot adjust temperature
   hvacEnabled?: boolean; // HVAC on/off
+  boostActive?: boolean; // Boost mode active
+  boostMinutes?: number; // Remaining boost minutes
+  boostTargetTemp?: number; // Boost target temperature
 };
 
 type WeatherHourly = {

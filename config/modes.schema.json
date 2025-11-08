@@ -1,0 +1,196 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["version", "rooms", "temperature_regimes", "modes", "base_regime_by_room"],
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 3,
+      "description": "Schema version"
+    },
+    "rooms": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "description": "List of all rooms"
+    },
+    "groups": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "description": "Room groups for easier mode configuration"
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "object",
+          "properties": {
+            "min": {"type": "number"},
+            "max": {"type": "number"}
+          },
+          "required": ["min", "max"]
+        },
+        "by_room": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "number"},
+                "max": {"type": "number"}
+              },
+              "required": ["min", "max"]
+            }
+          }
+        }
+      },
+      "required": ["default"],
+      "description": "Temperature limits (global and per-room)"
+    },
+    "temperature_regimes": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Z_]+$": {
+          "type": "object",
+          "properties": {
+            "schedule": {
+              "type": "object",
+              "patternProperties": {
+                "^(mon|tue|wed|thu|fri|sat|sun|mon-fri|sat-sun|all)$": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "at": {"type": "string", "pattern": "^\\d{2}:\\d{2}$"},
+                      "set": {
+                        "type": "object",
+                        "properties": {
+                          "rooms": {
+                            "type": "object",
+                            "patternProperties": {
+                              ".*": {"type": "number"}
+                            }
+                          }
+                        },
+                        "required": ["rooms"]
+                      }
+                    },
+                    "required": ["at", "set"]
+                  }
+                }
+              }
+            }
+          },
+          "required": ["schedule"]
+        }
+      },
+      "description": "Temperature regimes with day-of-week schedules"
+    },
+    "modes": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "type": "object",
+          "properties": {
+            "priority": {"type": "number", "minimum": 0, "maximum": 100},
+            "activation": {
+              "type": "object",
+              "properties": {
+                "dow": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["mon", "tue", "wed", "thu", "fri", "sat", "sun", "mon-fri", "sat-sun", "all"]
+                  }
+                },
+                "tod": {
+                  "type": "array",
+                  "items": {"type": "string", "pattern": "^\\d{2}:\\d{2}-\\d{2}:\\d{2}$"}
+                },
+                "date_range": {
+                  "type": "object",
+                  "properties": {
+                    "from": {"type": "string", "pattern": "^\\d{2}-\\d{2}$"},
+                    "to": {"type": "string", "pattern": "^\\d{2}-\\d{2}$"}
+                  },
+                  "required": ["from", "to"]
+                },
+                "holiday": {"type": "boolean"},
+                "calendar_tag": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "calendar_mode": {"type": "string"}
+              }
+            },
+            "room_regime": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {"type": "string", "pattern": "^[A-Z_]+$"}
+              }
+            }
+          },
+          "required": ["priority", "activation", "room_regime"]
+        }
+      },
+      "description": "Modes with activation rules and regime assignments"
+    },
+    "base_regime_by_room": {
+      "type": "object",
+      "patternProperties": {
+        ".*": {"type": "string", "pattern": "^[A-Z_]+$"}
+      },
+      "description": "Fallback regime for each room when no mode is active"
+    },
+    "weather": {
+      "type": "object",
+      "properties": {
+        "correlation": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "default_pivot_temp_c": {"type": "number"},
+            "min_offset": {"type": "number"},
+            "max_offset": {"type": "number"},
+            "rooms": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {
+                  "type": "object",
+                  "properties": {
+                    "kT": {"type": "number"},
+                    "kW": {"type": "number"},
+                    "kD": {"type": "number"},
+                    "pivot_temp_c": {"type": "number"},
+                    "dir_weights": {
+                      "type": "object",
+                      "properties": {
+                        "N": {"type": "number"},
+                        "NE": {"type": "number"},
+                        "E": {"type": "number"},
+                        "SE": {"type": "number"},
+                        "S": {"type": "number"},
+                        "SW": {"type": "number"},
+                        "W": {"type": "number"},
+                        "NW": {"type": "number"}
+                      },
+                      "required": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+                    }
+                  },
+                  "required": ["kT", "kW", "kD", "pivot_temp_c", "dir_weights"]
+                }
+              }
+            }
+          },
+          "required": ["enabled", "default_pivot_temp_c", "min_offset", "max_offset", "rooms"]
+        }
+      },
+      "description": "Weather correlation configuration for dynamic temperature adjustments"
+    }
+  }
+}
