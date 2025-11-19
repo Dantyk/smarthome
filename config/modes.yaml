@@ -1,136 +1,136 @@
 version: 3
 
-# Zoznam miestností
+# Room list
 rooms:
-  - spalna
-  - detska
-  - obyvacka
-  - kuchyna
-  - kupelna
+  - bedroom
+  - kidroom1
+  - living
+  - kitchen
+  - bathroom
 
-# Skupiny miestností
+# Room groups
 groups:
-  bedroom: [spalna, detska]
-  living: [obyvacka, kuchyna]
+  bedroom: [bedroom, kidroom1]
+  living: [living, kitchen]
 
-# Teplotné limity
+# Temperature limits
 limits:
   default:
     min: 16.0
     max: 28.0
   by_room:
-    kupelna:
+    bathroom:
       min: 20.0
       max: 25.0
 
 # Teplotné režimy (schedules)
 temperature_regimes:
-  VIKEND:
+  WEEKEND:
     schedule:
       sat-sun:
         - at: "08:00"
           set:
             rooms:
-              spalna: 21
-              detska: 21
-              obyvacka: 21
-              kuchyna: 21
+              bedroom: 21
+              kidroom1: 21
+              living: 21
+              kitchen: 21
         - at: "23:00"
           set:
             rooms:
-              spalna: 19
-              detska: 19
-              obyvacka: 19
-              kuchyna: 19
-  PRACOVNY:
+              bedroom: 19
+              kidroom1: 19
+              living: 19
+              kitchen: 19
+  WORKDAY:
     schedule:
       mon-fri:
         - at: "06:00"
           set:
             rooms:
-              spalna: 21
-              detska: 21
-              obyvacka: 20
-              kuchyna: 20
+              bedroom: 21
+              kidroom1: 21
+              living: 20
+              kitchen: 20
         - at: "08:00"
           set:
             rooms:
-              spalna: 19
-              detska: 19
-              obyvacka: 20
-              kuchyna: 20
+              bedroom: 19
+              kidroom1: 19
+              living: 20
+              kitchen: 20
         - at: "17:00"
           set:
             rooms:
-              spalna: 20
-              detska: 21
-              obyvacka: 22
-              kuchyna: 22
+              bedroom: 20
+              kidroom1: 21
+              living: 22
+              kitchen: 22
         - at: "23:00"
           set:
             rooms:
-              spalna: 19
-              detska: 19
-              obyvacka: 19
-              kuchyna: 19
+              bedroom: 19
+              kidroom1: 19
+              living: 19
+              kitchen: 19
 
-# Módy (aktivačné pravidlá)
+# Modes (activation rules)
 modes:
-  vikend:
+  weekend:
     priority: 40
     activation:
       dow: [sat, sun]
     room_regime:
-      "*": VIKEND
+      "*": WEEKEND
   
-  pracovny_den:
+  workday:
     priority: 30
     activation:
       dow: [mon, tue, wed, thu, fri]
     room_regime:
-      "*": PRACOVNY
+      "*": WORKDAY
   
-  navsteva:
+  visitors:
     priority: 60
     activation:
       calendar_mode: navsteva
     room_regime:
-      bedroom: VIKEND
-      living: PRACOVNY
+      bedroom: WEEKEND
+      living: WORKDAY
 
-# Základné režimy pre izby (fallback ak žiadny mód neaktívny)
+# Base regimes for rooms (fallback if no mode is active)
 base_regime_by_room:
-  spalna: PRACOVNY
-  detska: PRACOVNY
-  obyvacka: PRACOVNY
-  kuchyna: PRACOVNY
-  kupelna: PRACOVNY
+  bedroom: WORKDAY
+  kidroom1: WORKDAY
+  living: WORKDAY
+  kitchen: WORKDAY
+  bathroom: WORKDAY
 
-# Weather correlation konfigurácia
+# Weather correlation configuration
 weather:
   correlation:
     enabled: true
-    default_pivot_temp_c: 12  # Referenčná vonkajšia teplota
-    min_offset: -3.0          # Max zníženie cieľovej teploty
-    max_offset: 2.0           # Max zvýšenie cieľovej teploty
+    default_pivot_temp_c: 12  # Reference outdoor temperature
+    min_offset: -3.0          # Max target temperature decrease
+    max_offset: 2.0           # Max target temperature increase
     
     rooms:
-      spalna:
-        kT: -0.08             # Čím chladnejšie vonku, tým viac topiť (NEGATIVE!)
-        kW: -0.03             # Čím silnejší vietor, tým viac topiť (NEGATIVE!)
-        kD: 0.15              # Váha smeru vetra
+      bedroom:
+        kT: -0.08             # Colder outside = more heating (NEGATIVE!)
+        kW: -0.03             # Stronger wind = more heating (NEGATIVE!)
+        kD: 0.15              # Wind direction weight
         pivot_temp_c: 12
-        dir_weights:          # Severné smery = chladnejšie = topiť viac (POSITIVE!)
-          N: 0.8              # Sever = najvýraznejšia korekcia hore
+        dir_weights:          # Northern directions = colder = more heating (POSITIVE!)
+          N: 0.8              # North = strongest upward correction
           NE: 0.6
           E: 0.2
           SE: -0.1
-          S: -0.5             # Juh = korekcia dole (menej topiť)
+          S: -0.5             # South = downward correction (less heating)
           SW: -0.3
           W: 0.0
           NW: 0.4
       
-      detska:
+      kidroom1:
         kT: -0.08
         kW: -0.025
         kD: 0.12
@@ -145,7 +145,7 @@ weather:
           W: -0.1
           NW: 0.3
       
-      obyvacka:
+      living:
         kT: -0.07
         kW: -0.02
         kD: 0.1
@@ -160,7 +160,7 @@ weather:
           W: 0.1
           NW: 0.3
       
-      kuchyna:
+      kitchen:
         kT: -0.06
         kW: -0.02
         kD: 0.1
@@ -175,7 +175,7 @@ weather:
           W: 0.0
           NW: 0.2
       
-      kupelna:
+      bathroom:
         kT: -0.05
         kW: -0.01
         kD: 0.05
