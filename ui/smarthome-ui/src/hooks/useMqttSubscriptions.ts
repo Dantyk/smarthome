@@ -61,17 +61,24 @@ export function useMqttSubscriptions() {
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], hvacEnabled: v }}}));
     });
     
-    const offC = subscribe('virt/mode/current', (_t, m) => { 
+    // Subscribe to active regimes per room and derive overall mode
+    const offC = subscribe('virt/system/active_regimes', (_t, m) => {
       try {
         const raw = td.decode(m);
-        // Accept either JSON {mode: '...'} or plain string payload
-        let data: any;
-        try { data = JSON.parse(raw); } catch { data = raw; }
-        const modeVal = typeof data === 'object' ? data.mode : String(data);
-        console.log('[UI] Mode received (raw):', raw, '->', modeVal);
-        set({ mode: modeVal });
+        const data = JSON.parse(raw);
+        console.log('[UI] Active regimes received (raw):', raw);
+        // data should be { regimes: { room: regime_name, ... } } or { room: regime_name }
+        const regimes = typeof data === 'object' && data.regimes ? data.regimes : data;
+        if (typeof regimes === 'object') {
+          const regimeValues = Object.values(regimes);
+          // Determine mode: if all rooms have same regime, use that; else "MIX"
+          const uniqueRegimes = new Set(regimeValues);
+          const mode = uniqueRegimes.size === 1 ? String(regimeValues[0]) : 'MIX';
+          console.log('[UI] Derived mode from regimes:', mode);
+          set({ mode });
+        }
       } catch (e) {
-        console.error('[UI] Error handling mode payload:', e);
+        console.warn('[UI] Active regimes parse failed:', e);
       }
     });
     
@@ -82,21 +89,14 @@ export function useMqttSubscriptions() {
         try { data = JSON.parse(raw); } catch { data = raw; }
         console.log('[UI] Weather received (raw):', raw);
 
-        // If payload is plain number or string, coerce to temp
+        // If payload is plain number or string, coerce to temp only
         if (typeof data === 'string' || typeof data === 'number') {
           const temp = parseFloat(String(data));
-          set((s: any) => ({ weather: { ...(s.weather || {}), temp, description: s.weather?.description, icon: s.weather?.icon } }));
+          set((s: any) => ({ weather: { ...(s.weather || {}), temp } }));
           return;
         }
 
-        const incomingHourly = Array.isArray(data.hourly)
-          ? (data.hourly as any[]).slice(0, 6).map((h: any) => ({
-              time: h.dt_txt || new Date((h.dt || h.ts || Date.now()/1000) * 1000).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
-              temp: h.main?.temp ?? h.temp,
-              icon: h.weather?.[0]?.icon || h.icon || '01d'
-            }))
-          : undefined;
-
+        // Parse JSON weather object
         set((s: any) => ({ weather: {
           ...(s.weather || {}),
           temp: data.temp,
@@ -105,8 +105,7 @@ export function useMqttSubscriptions() {
           humidity: data.humidity,
           wind_speed: data.wind_speed,
           location: data.location || (s.weather ? s.weather.location : undefined),
-          country: data.country || (s.weather ? s.weather.country : undefined),
-          ...(incomingHourly && incomingHourly.length ? { hourly: incomingHourly } : {})
+          country: data.country || (s.weather ? s.weather.country : undefined)
         }}));
       } catch (e) {
         console.error('[UI] Failed to parse weather:', e);
