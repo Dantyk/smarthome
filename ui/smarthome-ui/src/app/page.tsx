@@ -8,24 +8,24 @@ import { publish } from '@/lib/mqtt';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const ROOMS = ['spalna','detska','obyvacka','kuchyna','kupelna'];
+const ROOMS = ['bedroom','kidroom1','living','kitchen','bathroom'];
 const ROOM_NAMES: Record<string,string> = {
-  spalna: 'Spálňa',
-  detska: 'Detská',
-  obyvacka: 'Obývačka',
-  kuchyna: 'Kuchyňa',
-  kupelna: 'Kúpeľňa'
+  bedroom: 'Spálňa',
+  kidroom1: 'Detská',
+  living: 'Obývačka',
+  kitchen: 'Kuchyňa',
+  bathroom: 'Kúpeľňa'
 };
 const ROOM_ICONS: Record<string,string> = {
-  spalna: '🛏️',
-  detska: '🧸',
-  obyvacka: '🛋️',
-  kuchyna: '🍳',
-  kupelna: '🚿'
+  bedroom: '🛏️',
+  kidroom1: '🧸',
+  living: '🛋️',
+  kitchen: '🍳',
+  bathroom: '🚿'
 };
 
 const ROOM_CONFIG: Record<string, {readonly?: boolean}> = {
-  kupelna: { readonly: true }
+  bathroom: { readonly: true }
 };
 
 export default function Home() {
@@ -56,11 +56,11 @@ export default function Home() {
   
   const [sliders, setSliders] = useState<Record<string,number>>({});
   const [burstDurations, setBurstDurations] = useState<Record<string,number>>({
-    spalna: 1,
-    detska: 1,
-    obyvacka: 1,
-    kuchyna: 1,
-    kupelna: 1
+    bedroom: 1,
+    kidroom1: 1,
+    living: 1,
+    kitchen: 1,
+    bathroom: 1
   });
   
   // Sync slider state with incoming boost target temps from MQTT

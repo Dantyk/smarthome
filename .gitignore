@@ -15,6 +15,8 @@ flows/nodered/.npm/
 flows/nodered/context/
 flows/nodered/cronplusdata/
 flows/nodered/*.backup_*
+flows/nodered/*.bak
+flows/nodered/flows.json.auto_repair*.bak
 
 # UI production env
 ui/smarthome-ui/.env.production

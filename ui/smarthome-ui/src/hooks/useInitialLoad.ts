@@ -94,7 +94,7 @@ function seedDefaultsIfEmpty(state: any) {
   const next = { ...state };
   const hasAnyRoom = Object.keys(state.rooms || {}).length > 0;
   const hasWeather = !!(state.weather && (state.weather.temp !== undefined || (state.weather.hourly && state.weather.hourly.length)));
-  const ROOMS = ['spalna','detska','obyvacka','kuchyna','kupelna'];
+  const ROOMS = ['bedroom','kidroom1','living','kitchen','bathroom'];
   // Seed rooms
   if (!hasAnyRoom) {
     next.rooms = {};
