@@ -1,9 +1,0 @@
-{
-    "humidity_state": {
-        "fanOn": true,
-        "lastOnTime": 1762252948480,
-        "lastOffTime": 0,
-        "manualMode": false,
-        "manualStartTime": 0
-    }
-}

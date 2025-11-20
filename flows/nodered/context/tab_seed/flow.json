@@ -5,16 +5,33 @@
             "detska": true,
             "obyvacka": true,
             "kuchyna": true,
-            "kupelna": true
+            "kupelna": true,
+            "living": true,
+            "bedroom": true,
+            "kidroom1": true,
+            "kitchen": true,
+            "bathroom": true
         },
         "enabled": {
             "spalna": true,
             "detska": true,
             "obyvacka": true,
             "kuchyna": true,
-            "kupelna": true
+            "kupelna": true,
+            "bedroom": true,
+            "kidroom1": true,
+            "living": true,
+            "kitchen": true,
+            "bathroom": true
         },
         "weather": true,
         "hourly": true
-    }
+    },
+    "last_rooms": [
+        "bedroom",
+        "kidroom1",
+        "living",
+        "kitchen",
+        "bathroom"
+    ]
 }

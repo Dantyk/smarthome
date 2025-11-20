@@ -8,10 +8,15 @@ ui/smarthome-ui/node_modules
 ui/smarthome-ui/.next
 flows/nodered/node_modules
 
-# Node-RED runtime súbory
+# Node-RED runtime a cache súbory
 flows/nodered/.config.*.json
+flows/nodered/.config.*.json.backup
+flows/nodered/.npm/
 flows/nodered/context/
+flows/nodered/cronplusdata/
 flows/nodered/*.backup_*
+flows/nodered/*.bak
+flows/nodered/flows.json.auto_repair*.bak
 
 # UI production env
 ui/smarthome-ui/.env.production

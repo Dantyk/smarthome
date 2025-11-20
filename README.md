@@ -66,9 +66,9 @@ Baïkal CalDAV ───┘         │
 
 Systém podporuje 3 základné režimy:
 
-- **vikend** - Komfortné teploty cez celý deň
-- **pracovny_den** - Úsporný režim cez deň (práca), komfort večer
-- **navsteva** - Špeciálny režim pri hosťoch
+- **weekend** - Komfortné teploty cez celý deň
+- **workday** - Úsporný režim cez deň (práca), komfort večer
+- **visitors** - Špeciálny režim pri hosťoch
 
 Každý režim definuje:
 - **Priority** - Vyššia priorita preváži nižšiu
@@ -77,11 +77,10 @@ Každý režim definuje:
 
 ### Teplotné režimy
 
-Každá miestnosť môže mať 3 teplotné profily:
+Každá miestnosť môže mať teplotné profily:
 
-- **PRACOVNY** - Úsporný (16°C cez deň, 21°C večer)
-- **VIKEND** - Komfortný (21°C celý deň)
-- **SPALNA_NOC** - Nočný (19°C v noci, 21°C ráno/večer)
+- **WORKDAY** - Úsporný (16°C cez deň, 21°C večer)
+- **WEEKEND** - Komfortný (21°C celý deň)
 
 ## 📅 Kalendárové udalosti
 
@@ -98,16 +97,16 @@ SMH MODE=nazov_rezimu
 
 **Príklady:**
 ```
-SMH MODE=navsteva
-SMH MODE=vikend
-SMH MODE=pracovny_den
+SMH MODE=visitors
+SMH MODE=weekend
+SMH MODE=workday
 ```
 
 **Použitie:**
 - Vytvor udalosť v Google Calendar alebo Baïkal
-- Názov: `SMH MODE=navsteva`
+- Názov: `SMH MODE=visitors`
 - Čas: Dnes 14:00 - 18:00
-- **Výsledok**: Počas návštevy (14-18h) sa aktivuje režim "navsteva"
+- **Výsledok**: Počas návštevy (14-18h) sa aktivuje režim "visitors"
 
 ---
 
@@ -121,15 +120,15 @@ SMH BOOST room=MIESTNOST temp=TEPLOTA dur=MINUTY
 ```
 
 **Parametre:**
-- `room` - povinné: `spalna`, `detska`, `obyvacka`, `kuchyna`, `kupelna`
+- `room` - povinné: `bedroom`, `kidroom1`, `living`, `kitchen`, `bathroom`
 - `temp` - voliteľné: cieľová teplota (°C), default = aktuálna + 2°C
 - `dur` - voliteľné: trvanie v minútach, default = 60
 
 **Príklady:**
 ```
-SMH BOOST room=spalna temp=23 dur=120
-SMH BOOST room=kupelna temp=24
-SMH BOOST room=detska
+SMH BOOST room=bedroom temp=23 dur=120
+SMH BOOST room=bathroom temp=24
+SMH BOOST room=kidroom1
 ```
 
 **Použitie:**
@@ -154,15 +153,15 @@ SMH OFFSET room=MIESTNOST +/-HODNOTA
 
 **Príklady:**
 ```
-SMH OFFSET room=kuchyna -1
-SMH OFFSET room=detska +2.5
-SMH OFFSET room=obyvacka -0.5
+SMH OFFSET room=kitchen -1
+SMH OFFSET room=kidroom1 +2.5
+SMH OFFSET room=living -0.5
 ```
 
 **Použitie:**
 - Jemná korekcia teploty bez zmeny celého režimu
 - Offset platí **počas trvania kalendárovej udalosti**
-- Pre trvalú zmenu použi MQTT: `mosquitto_pub -t 'virt/offset/kuchyna/value' -m '-1' -r`
+- Pre trvalú zmenu použi MQTT: `mosquitto_pub -t 'virt/offset/living/value' -m '-1' -r`
 
 ---
 
@@ -171,13 +170,13 @@ SMH OFFSET room=obyvacka -0.5
 Môžeš kombinovať viacero udalostí naraz:
 
 **Scenár: Víkendová párty**
-1. `SMH MODE=navsteva` (Sobota 14:00 - 22:00)
-2. `SMH BOOST room=obyvacka temp=22` (Sobota 13:30 - 15:00)
-3. `SMH OFFSET room=kupelna +1` (Sobota 14:00 - 22:00)
+1. `SMH MODE=visitors` (Sobota 14:00 - 22:00)
+2. `SMH BOOST room=living temp=22` (Sobota 13:30 - 15:00)
+3. `SMH OFFSET room=bathroom +1` (Sobota 14:00 - 22:00)
 
 **Výsledok:**
 - Pred príchodom hostí sa obývačka prehreje
-- Počas návštevy bude aktívny režim "navsteva"
+- Počas návštevy bude aktívny režim "visitors"
 - Kúpeľňa bude mať o 1°C vyššiu teplotu
 
 ## 🌡️ Weather Correlation
@@ -193,7 +192,7 @@ Systém automaticky upravuje cieľové teploty podľa vonkajšej teploty a vetra
 
 **Príklad:**
 ```yaml
-spalna:
+bedroom:
   kT: -0.08   # Pri -10°C vonku → +0.8°C vnútri
   kW: -0.03   # Pri 20km/h vetre → +0.6°C vnútri
   dir_weights:
@@ -221,6 +220,23 @@ docker compose restart nodered
 docker compose restart baikal
 ```
 
+### UI dev / deployment note
+
+If you change UI source files under `ui/smarthome-ui`, the Next.js app must be rebuilt and the `ui` container restarted so the running site picks up the changes. Example commands:
+
+```bash
+# build the UI
+cd ui/smarthome-ui
+npm ci && npm run build
+
+# rebuild the docker image and restart the service
+cd ../../compose
+docker compose build ui
+docker compose up -d ui
+```
+
+Add these steps to your normal code-change workflow to avoid serving stale server-rendered HTML or client bundles.
+
 ### Zálohovanie
 ```bash
 # Baïkal kalendár
@@ -242,6 +258,16 @@ cp flows/nodered/flows.json flows/nodered/flows.json.backup
 - `virt/boost/{miestnost}/target_temp` - Boost cieľová teplota
 - `virt/offset/{miestnost}/value` - Nastaviť offset teploty
 - `internal/recalc_mode` - Prepočítať režim
+
+**Príklady:**
+```bash
+# Boost - spálňa na 23°C na 90 minút
+mosquitto_pub -t virt/boost/bedroom/minutes -m 90 -r
+mosquitto_pub -t virt/boost/bedroom/target_temp -m 23 -r
+
+# Offset - obývačka -1°C
+mosquitto_pub -t virt/offset/living/value -m -1 -r
+```
 
 ## 🛡️ Bezpečnosť
 

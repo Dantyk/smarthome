@@ -28,7 +28,15 @@ export function useMqttSubscriptions() {
     
     const offB = subscribe('virt/room/+/target_temp', (t, m) => {
       const room = t.split('/')[2];
-      const v = parseFloat(td.decode(m));
+      const raw = td.decode(m);
+      let v: number | undefined;
+      try {
+        const obj = JSON.parse(raw);
+        v = typeof obj === 'object' && obj.value !== undefined ? parseFloat(obj.value) : parseFloat(raw);
+      } catch {
+        v = parseFloat(raw);
+      }
+      v = Number.isFinite(v) ? v : undefined;
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], target: v }}}));
     });
     
@@ -55,19 +63,32 @@ export function useMqttSubscriptions() {
     
     const offC = subscribe('virt/mode/current', (_t, m) => { 
       try {
-        const data = JSON.parse(td.decode(m));
-        console.log('[UI] Mode received:', data.mode);
-        set({ mode: data.mode });
+        const raw = td.decode(m);
+        // Accept either JSON {mode: '...'} or plain string payload
+        let data: any;
+        try { data = JSON.parse(raw); } catch { data = raw; }
+        const modeVal = typeof data === 'object' ? data.mode : String(data);
+        console.log('[UI] Mode received (raw):', raw, '->', modeVal);
+        set({ mode: modeVal });
       } catch (e) {
-        console.error('[UI] Failed to parse mode:', e);
+        console.error('[UI] Error handling mode payload:', e);
       }
     });
     
   const offD = subscribe('virt/weather/current', (_t, m) => {
       try {
-        const data = JSON.parse(td.decode(m));
-        console.log('[UI] Weather received:', data.temp);
-        // Extract hourly forecast if present; otherwise keep existing hourly
+        const raw = td.decode(m);
+        let data: any;
+        try { data = JSON.parse(raw); } catch { data = raw; }
+        console.log('[UI] Weather received (raw):', raw);
+
+        // If payload is plain number or string, coerce to temp
+        if (typeof data === 'string' || typeof data === 'number') {
+          const temp = parseFloat(String(data));
+          set((s: any) => ({ weather: { ...(s.weather || {}), temp, description: s.weather?.description, icon: s.weather?.icon } }));
+          return;
+        }
+
         const incomingHourly = Array.isArray(data.hourly)
           ? (data.hourly as any[]).slice(0, 6).map((h: any) => ({
               time: h.dt_txt || new Date((h.dt || h.ts || Date.now()/1000) * 1000).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
