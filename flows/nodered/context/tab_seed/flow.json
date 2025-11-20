@@ -6,9 +6,9 @@
             "obyvacka": true,
             "kuchyna": true,
             "kupelna": true,
+            "living": true,
             "bedroom": true,
             "kidroom1": true,
-            "living": true,
             "kitchen": true,
             "bathroom": true
         },
@@ -26,5 +26,12 @@
         },
         "weather": true,
         "hourly": true
-    }
+    },
+    "last_rooms": [
+        "bedroom",
+        "kidroom1",
+        "living",
+        "kitchen",
+        "bathroom"
+    ]
 }
