@@ -68,7 +68,7 @@ function mergeRooms(current: Record<string, any>, incoming: Record<string, any>)
 
     // Accept various key names for enabled/target/current/humidity
     const enabled = coerceBool(src.enabled ?? src.hvacEnabled ?? prev.hvacEnabled);
-    const target = coerceNum(src.target ?? src.setpoint ?? src.target_temp ?? prev.target);
+    const target = coerceNum(src.target ?? src.setpoint ?? src.target_temp ?? prev.target) ?? 21; // Default to 21 if undefined
     const currentTemp = coerceNum(src.current ?? src.current_temp ?? src.temperature ?? prev.current);
     const humidity = coerceNum(src.humidity ?? src.rh ?? prev.humidity);
 

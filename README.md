@@ -220,6 +220,23 @@ docker compose restart nodered
 docker compose restart baikal
 ```
 
+### UI dev / deployment note
+
+If you change UI source files under `ui/smarthome-ui`, the Next.js app must be rebuilt and the `ui` container restarted so the running site picks up the changes. Example commands:
+
+```bash
+# build the UI
+cd ui/smarthome-ui
+npm ci && npm run build
+
+# rebuild the docker image and restart the service
+cd ../../compose
+docker compose build ui
+docker compose up -d ui
+```
+
+Add these steps to your normal code-change workflow to avoid serving stale server-rendered HTML or client bundles.
+
 ### Zálohovanie
 ```bash
 # Baïkal kalendár

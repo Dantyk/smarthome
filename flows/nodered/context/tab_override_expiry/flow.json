@@ -16,10 +16,16 @@
             "active": false
         },
         "kitchen": {
-            "active": true
+            "active": false
         },
         "bathroom": {
-            "active": true
+            "active": false
+        },
+        "bedroom": {
+            "active": false
+        },
+        "kidroom1": {
+            "active": false
         }
     }
 }

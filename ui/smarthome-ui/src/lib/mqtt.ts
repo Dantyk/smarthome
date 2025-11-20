@@ -115,5 +115,6 @@ export function publish(topic: string, payload: string | object, retain = false)
     return;
   }
   const data = typeof payload === 'string' ? payload : JSON.stringify(payload);
+  console.log(`[MQTT] Publishing: ${topic}`, data, `(retain=${retain})`);
   c.publish(topic, data, { retain });
 }
