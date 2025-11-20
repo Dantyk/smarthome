@@ -41,6 +41,8 @@ export default function Home() {
   const router = useRouter();
   const tz = process.env.NEXT_PUBLIC_TZ || 'Europe/Bratislava';
   const locationNameEnv = process.env.NEXT_PUBLIC_LOCATION || 'Bratislava, SK';
+  // Get room list from state (loaded from API) or fallback to defaults
+  const ROOM_LIST = Object.keys(rooms).length > 0 ? Object.keys(rooms).sort() : ROOMS;
   const [now, setNow] = useState<string>('');
   useEffect(() => {
     const fmt = new Intl.DateTimeFormat('sk-SK', { 
@@ -65,7 +67,7 @@ export default function Home() {
   
   // Sync slider state with incoming boost target temps from MQTT
   useEffect(() => {
-    ROOMS.forEach(room => {
+    ROOM_LIST.forEach(room => {
       const rm = rooms[room];
       if (rm?.boostActive && rm.boostTargetTemp !== undefined && !isNaN(rm.boostTargetTemp)) {
         setSliders(prev => {
@@ -77,11 +79,11 @@ export default function Home() {
         });
       }
     });
-  }, [rooms]);
+  }, [rooms, ROOM_LIST]);
   
   // Initialize sliders from MQTT data (no UI-invented defaults)
   useEffect(() => {
-    ROOMS.forEach(room => {
+    ROOM_LIST.forEach(room => {
       const rm = rooms[room];
       
       // Only set slider if we have actual MQTT data
@@ -94,7 +96,7 @@ export default function Home() {
         // If no MQTT data, don't set anything - wait for Node-RED defaults
       }
     });
-  }, [rooms]);
+  }, [rooms, ROOM_LIST]);
   
   const getRemainingTime = (overrideUntil?: string) => {
     if (!overrideUntil) return null;
@@ -291,7 +293,7 @@ export default function Home() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: 16
       }}>
-        {ROOMS.map(r => {
+        {ROOM_LIST.map(r => {
           const rm = rooms[r] || {};
           const config = ROOM_CONFIG[r] || {};
           const hasData = rm.current !== undefined;

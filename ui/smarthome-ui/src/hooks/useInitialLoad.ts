@@ -27,11 +27,20 @@ export function useInitialLoad() {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
           console.log('[useInitialLoad] Initial state loaded from', url);
-          set((s: any) => ({
-            mode: data.mode ?? s.mode,
-            weather: data.weather ? { ...(s.weather || {}), ...data.weather } : s.weather,
-            rooms: mergeRooms(s.rooms, data.rooms || data.hvac || data.zones || {})
-          }));
+          set((s: any) => {
+            // Extract rooms from API response: convert array [{name, ...}] to object {name: {...}}
+            const roomsObj: Record<string, any> = {};
+            if (Array.isArray(data.rooms)) {
+              for (const room of data.rooms) {
+                roomsObj[room.name] = { current_temp: room.current_temp, target_temp: room.target_temp, ...room };
+              }
+            }
+            return {
+              mode: data.mode ?? s.mode,
+              weather: data.weather ? { ...(s.weather || {}), ...data.weather } : s.weather,
+              rooms: mergeRooms(s.rooms, roomsObj || data.hvac || data.zones || {})
+            };
+          });
           loaded = true;
           break;
         } catch (e) {
@@ -94,7 +103,11 @@ function seedDefaultsIfEmpty(state: any) {
   const next = { ...state };
   const hasAnyRoom = Object.keys(state.rooms || {}).length > 0;
   const hasWeather = !!(state.weather && (state.weather.temp !== undefined || (state.weather.hourly && state.weather.hourly.length)));
-  const ROOMS = ['bedroom','kidroom1','living','kitchen','bathroom'];
+  
+  // Default rooms - will be overridden by API if available
+  const DEFAULT_ROOMS = ['bedroom','kidroom1','living','kitchen','bathroom'];
+  const ROOMS = hasAnyRoom ? Object.keys(state.rooms) : DEFAULT_ROOMS;
+  
   // Seed rooms
   if (!hasAnyRoom) {
     next.rooms = {};
