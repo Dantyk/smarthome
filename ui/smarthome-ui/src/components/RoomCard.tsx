@@ -15,15 +15,18 @@ interface Props {
   setSlidersHandler: (updater: (prev: Record<string,number>) => Record<string,number>) => void;
 }
 
-// Icon rendering is per-room: if `rm.icon` is provided it is shown; otherwise
-// we only show special icons for override/boost (🔥/❄️). This keeps the UI
-// from showing default emojis when no icon exists in config.
+// Icon rendering: map room name/label to predefined icons
+const ICON_MAP: Record<string, string> = {
+  'bedroom': '🛏️', 'spalna': '🛏️', 'spálňa': '🛏️',
+  'kidroom': '🧸', 'kidroom1': '🧸', 'detska': '🧸', 'detská': '🧸',
+  'living': '🛋️', 'obyvacka': '🛋️', 'obývačka': '🛋️',
+  'kitchen': '🍳', 'kuchyna': '🍳', 'kuchyňa': '🍳',
+  'bathroom': '🚿', 'kupelna': '🚿', 'kúpeľňa': '🚿'
+};
 
 const RoomCard: React.FC<Props> = ({ room, colors, theme, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
   // subscribe only to the specific room slice
   const rm = useHouse((s: any) => s.rooms?.[room] || {});
-
-  // burst duration is now persisted in the store and read inside RoomControls
 
   const isReadonly = (rm?.readonly === true);
   const currentValue = rm?.current ?? 0;
@@ -35,10 +38,11 @@ const RoomCard: React.FC<Props> = ({ room, colors, theme, activateBurst, cancelO
 
   const sliderValue = effectiveTarget;
   const specialIcon = (boostActive ? '🔥' : (rm?.override && currentValue !== undefined && effectiveTarget !== undefined ? (currentValue > effectiveTarget + 0.5 ? '🔥' : (currentValue < effectiveTarget ? '❄️' : undefined)) : undefined));
-  // Only show rm.icon if it is explicitly set and either matches the room key
-  // or is an emoji character. This avoids showing unrelated icons.
-  const isEmoji = typeof rm?.icon === 'string' && Array.from(rm.icon).length <= 2 && /\p{Emoji}/u.test(rm.icon);
-  const icon = (rm?.icon && (rm.icon === room || isEmoji)) ? rm.icon : specialIcon;
+  
+  // Match icon by room key or label/displayName/title (case-insensitive, normalized)
+  const roomLabel = (rm?.label || rm?.displayName || rm?.title || room).toLowerCase().replace(/[_-]/g, '');
+  const matchedIcon = ICON_MAP[room.toLowerCase()] || ICON_MAP[roomLabel];
+  const icon = matchedIcon || specialIcon;
   const remaining = rm?.overrideUntil ? new Date(rm.overrideUntil) : undefined;
 
   const renderCount = React.useRef(0);

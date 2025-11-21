@@ -19,6 +19,7 @@ services:
       - BAIKAL_CAL_ID=default
       - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
     volumes:
       - ../flows/nodered:/data
       - ./config/nodered/settings.js:/data/settings.js:ro

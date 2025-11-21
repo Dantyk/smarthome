@@ -11,9 +11,6 @@ import { useRouter } from 'next/navigation';
 
 import React from 'react';
 import RoomCard from '@/components/RoomCard';
-// Room list and names are provided by the house state (useHouse) / backend config.
-// Keep a small set of allowed icons for reference; actual per-room icon is optional
-const ALL_ICONS = ['🛏️','🧸','🛋️','🍳','🚿','🔥','❄️','🏠'];
 
 const ROOM_CONFIG: Record<string, {readonly?: boolean}> = {
   bathroom: { readonly: true }
@@ -315,13 +312,6 @@ export default function Home() {
               {now} • {weather?.location ? `${weather.location}${weather.country ? ', ' + weather.country : ''}` : locationNameEnv}
             </span>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); refreshState(); }}
-            title="Obnoviť počasie"
-            style={{ marginLeft: 8, background: 'transparent', border: 'none', color: colors.textSecondary, cursor: apiBase ? 'pointer' : 'not-allowed', fontSize: 18 }}
-          >
-            🔄
-          </button>
         </div>
         
         <div className="header-controls" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
