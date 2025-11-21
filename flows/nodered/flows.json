@@ -561,6 +561,31 @@
     ]
   },
   {
+    "id": "resolver_periodic",
+    "type": "inject",
+    "z": "tab_resolver",
+    "name": "Every 15min + Midnight",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0,15,30,45 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 100,
+    "y": 20,
+    "wires": [
+      [
+        "resolver_mqtt_trigger"
+      ]
+    ]
+  },
+  {
     "id": "resolver_mqtt_trigger",
     "type": "mqtt out",
     "z": "tab_resolver",

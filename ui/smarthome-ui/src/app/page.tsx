@@ -331,7 +331,7 @@ export default function Home() {
           </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontSize: 12, color: colors.textSecondary }}>Režim</div>
+            <div style={{ fontSize: 12, color: colors.textSecondary }}>Mód</div>
             <div style={{ padding: '6px 10px', borderRadius: 999, background: colors.cardBg, border: `1px solid ${colors.border}`, fontWeight: 600, color: colors.text }}>{mode}</div>
           </div>
         </div>

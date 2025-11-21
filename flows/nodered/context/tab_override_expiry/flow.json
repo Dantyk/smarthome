@@ -19,7 +19,9 @@
             "active": false
         },
         "bathroom": {
-            "active": false
+            "active": true,
+            "value": 21.7,
+            "until": "2025-11-21T23:30:56.514Z"
         },
         "bedroom": {
             "active": false
