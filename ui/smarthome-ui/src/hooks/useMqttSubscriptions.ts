@@ -61,24 +61,15 @@ export function useMqttSubscriptions() {
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], hvacEnabled: v }}}));
     });
     
-    // Subscribe to active regimes per room and derive overall mode
-    const offC = subscribe('virt/system/active_regimes', (_t, m) => {
+    // Subscribe to active mode (single dominant regime for entire household)
+    const offC = subscribe('virt/system/active_mode', (_t, m) => {
       try {
         const raw = td.decode(m);
-        const data = JSON.parse(raw);
-        console.log('[UI] Active regimes received (raw):', raw);
-        // data should be { regimes: { room: regime_name, ... } } or { room: regime_name }
-        const regimes = typeof data === 'object' && data.regimes ? data.regimes : data;
-        if (typeof regimes === 'object') {
-          const regimeValues = Object.values(regimes);
-          // Determine mode: if all rooms have same regime, use that; else "MIX"
-          const uniqueRegimes = new Set(regimeValues);
-          const mode = uniqueRegimes.size === 1 ? String(regimeValues[0]) : 'MIX';
-          console.log('[UI] Derived mode from regimes:', mode);
-          set({ mode });
-        }
+        const mode = raw.trim();
+        console.log('[UI] Active mode received:', mode);
+        set({ mode });
       } catch (e) {
-        console.warn('[UI] Active regimes parse failed:', e);
+        console.warn('[UI] Active mode parse failed:', e);
       }
     });
     

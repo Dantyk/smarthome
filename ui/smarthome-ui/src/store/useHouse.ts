@@ -66,3 +66,47 @@ export const useHouse = create<House>()(
     }
   )
 );
+
+// Cross-tab sync: listen to localStorage changes from other tabs
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'house-storage' && e.newValue) {
+      try {
+        const newState = JSON.parse(e.newValue);
+        const currentState = useHouse.getState();
+        
+        // Sync burstDurations from other tabs
+        if (newState.state?.burstDurations && 
+            JSON.stringify(newState.state.burstDurations) !== JSON.stringify(currentState.burstDurations)) {
+          console.log('[Storage] Syncing burstDurations from other tab:', newState.state.burstDurations);
+          useHouse.setState({ burstDurations: newState.state.burstDurations });
+        }
+        
+        // Also sync rooms (boost target temps, slider values)
+        if (newState.state?.rooms) {
+          const updatedRooms = { ...currentState.rooms };
+          let hasChanges = false;
+          
+          Object.keys(newState.state.rooms).forEach(room => {
+            const newRoom = newState.state.rooms[room];
+            const currentRoom = currentState.rooms[room] || {};
+            
+            // Sync boostTargetTemp if changed
+            if (newRoom.boostTargetTemp !== undefined && 
+                newRoom.boostTargetTemp !== currentRoom.boostTargetTemp) {
+              updatedRooms[room] = { ...currentRoom, boostTargetTemp: newRoom.boostTargetTemp };
+              hasChanges = true;
+              console.log(`[Storage] Syncing ${room} boostTargetTemp: ${newRoom.boostTargetTemp}`);
+            }
+          });
+          
+          if (hasChanges) {
+            useHouse.setState({ rooms: updatedRooms });
+          }
+        }
+      } catch (err) {
+        console.error('[Storage] Failed to parse storage event:', err);
+      }
+    }
+  });
+}

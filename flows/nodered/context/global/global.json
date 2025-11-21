@@ -2,7 +2,7 @@
     "weatherForecast": [
         {
             "hour": 4,
-            "temp": 1.4,
+            "temp": 1.2,
             "weather": "Clouds",
             "description": "zamračené",
             "icon": "04n",
@@ -53,7 +53,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:32:00.249Z",
+            "timestamp": "2025-11-21T23:06:00.190Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -63,71 +63,71 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:32:00.210Z",
+            "timestamp": "2025-11-21T23:06:00.167Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:32:00.161Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
-            "type": "mosquitto",
-            "location": "online",
-            "payload": "false",
-            "timestamp": "2025-11-21T22:32:00.149Z",
-            "severity": "warning",
-            "actions": [
-                "pushover"
-            ],
-            "message": "⚠️ Služba offline: mosquitto"
-        },
-        {
-            "category": "service",
-            "type": "mosquitto",
-            "location": "online",
-            "payload": "false",
-            "timestamp": "2025-11-21T22:32:00.144Z",
-            "severity": "warning",
-            "actions": [
-                "pushover"
-            ],
-            "message": "⚠️ Služba offline: mosquitto"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:32:00.130Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:32:00.130Z",
+            "timestamp": "2025-11-21T23:06:00.129Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
         },
         {
             "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:06:00.125Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "mosquitto",
+            "location": "online",
+            "payload": "false",
+            "timestamp": "2025-11-21T23:06:00.125Z",
+            "severity": "warning",
+            "actions": [
+                "pushover"
+            ],
+            "message": "⚠️ Služba offline: mosquitto"
+        },
+        {
+            "category": "service",
+            "type": "mosquitto",
+            "location": "online",
+            "payload": "false",
+            "timestamp": "2025-11-21T23:06:00.125Z",
+            "severity": "warning",
+            "actions": [
+                "pushover"
+            ],
+            "message": "⚠️ Služba offline: mosquitto"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:06:00.124Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:32:00.130Z",
+            "timestamp": "2025-11-21T23:06:00.119Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -137,7 +137,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:32:00.129Z",
+            "timestamp": "2025-11-21T23:06:00.118Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -149,7 +149,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:32:00.129Z",
+            "timestamp": "2025-11-21T23:06:00.117Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -161,7 +161,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:32:00.129Z",
+            "timestamp": "2025-11-21T23:06:00.117Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -173,7 +173,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:32:00.128Z",
+            "timestamp": "2025-11-21T23:06:00.102Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -185,17 +185,27 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:31:00.151Z",
+            "timestamp": "2025-11-21T23:05:00.286Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:05:00.244Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:31:00.148Z",
+            "timestamp": "2025-11-21T23:05:00.197Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -204,20 +214,10 @@
         },
         {
             "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:31:00.126Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:31:00.111Z",
+            "timestamp": "2025-11-21T23:05:00.196Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -227,7 +227,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:31:00.111Z",
+            "timestamp": "2025-11-21T23:05:00.121Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -239,7 +239,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:31:00.110Z",
+            "timestamp": "2025-11-21T23:05:00.121Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -251,7 +251,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:30:00.233Z",
+            "timestamp": "2025-11-21T23:04:00.146Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -261,47 +261,17 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:30:00.191Z",
+            "timestamp": "2025-11-21T23:04:00.145Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:30:00.164Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:30:00.164Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:30:00.164Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:30:00.159Z",
+            "timestamp": "2025-11-21T23:04:00.144Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -313,7 +283,7 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:30:00.159Z",
+            "timestamp": "2025-11-21T23:04:00.143Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -322,20 +292,50 @@
         },
         {
             "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:04:00.143Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
             "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:30:00.158Z",
+            "timestamp": "2025-11-21T23:04:00.143Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:04:00.142Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:04:00.128Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
         },
         {
             "category": "service",
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:30:00.138Z",
+            "timestamp": "2025-11-21T23:04:00.093Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -347,7 +347,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:30:00.123Z",
+            "timestamp": "2025-11-21T23:04:00.093Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -359,7 +359,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:30:00.122Z",
+            "timestamp": "2025-11-21T23:04:00.093Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -371,7 +371,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:30:00.122Z",
+            "timestamp": "2025-11-21T23:04:00.092Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -383,7 +383,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:29:00.178Z",
+            "timestamp": "2025-11-21T23:03:00.144Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -393,7 +393,7 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:29:00.170Z",
+            "timestamp": "2025-11-21T23:03:00.099Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -405,7 +405,7 @@
             "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:29:00.170Z",
+            "timestamp": "2025-11-21T23:03:00.095Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: apprise"
@@ -415,7 +415,7 @@
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:29:00.170Z",
+            "timestamp": "2025-11-21T23:03:00.095Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -425,7 +425,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:29:00.150Z",
+            "timestamp": "2025-11-21T23:03:00.094Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -437,7 +437,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:29:00.149Z",
+            "timestamp": "2025-11-21T23:03:00.087Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -446,20 +446,10 @@
         },
         {
             "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:28:14.072Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:28:00.177Z",
+            "timestamp": "2025-11-21T23:02:00.212Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -469,37 +459,17 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:28:00.152Z",
+            "timestamp": "2025-11-21T23:02:00.211Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:28:00.114Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:28:00.113Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
         },
         {
             "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:28:00.113Z",
+            "timestamp": "2025-11-21T23:02:00.181Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -511,7 +481,7 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:28:00.113Z",
+            "timestamp": "2025-11-21T23:02:00.171Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -520,20 +490,40 @@
         },
         {
             "category": "service",
-            "type": "nodered",
+            "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:28:00.112Z",
+            "timestamp": "2025-11-21T23:02:00.171Z",
             "severity": "info",
             "actions": [],
-            "message": "✅ Služba online: nodered"
+            "message": "✅ Služba online: apprise"
         },
         {
             "category": "service",
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:28:00.102Z",
+            "timestamp": "2025-11-21T23:02:00.170Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:02:00.147Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:02:00.147Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -543,7 +533,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:28:00.101Z",
+            "timestamp": "2025-11-21T23:02:00.134Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -555,7 +545,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:28:00.101Z",
+            "timestamp": "2025-11-21T23:02:00.133Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -567,7 +557,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:28:00.100Z",
+            "timestamp": "2025-11-21T23:02:00.133Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -579,7 +569,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:28:00.099Z",
+            "timestamp": "2025-11-21T23:02:00.108Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -591,7 +581,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:27:00.126Z",
+            "timestamp": "2025-11-21T23:01:00.161Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -601,7 +591,7 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:27:00.124Z",
+            "timestamp": "2025-11-21T23:01:00.113Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -613,7 +603,7 @@
             "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:27:00.082Z",
+            "timestamp": "2025-11-21T23:01:00.111Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: apprise"
@@ -623,7 +613,7 @@
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:27:00.082Z",
+            "timestamp": "2025-11-21T23:01:00.108Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -633,7 +623,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:27:00.082Z",
+            "timestamp": "2025-11-21T23:01:00.107Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -645,7 +635,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:27:00.081Z",
+            "timestamp": "2025-11-21T23:01:00.104Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -657,7 +647,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:26:00.183Z",
+            "timestamp": "2025-11-21T23:00:00.224Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -667,17 +657,57 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:26:00.165Z",
+            "timestamp": "2025-11-21T23:00:00.210Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:00:00.189Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:00:00.189Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:00:00.185Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T23:00:00.185Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:26:00.122Z",
+            "timestamp": "2025-11-21T23:00:00.184Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -689,59 +719,19 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:26:00.118Z",
+            "timestamp": "2025-11-21T23:00:00.184Z",
             "severity": "warning",
             "actions": [
                 "pushover"
             ],
             "message": "⚠️ Služba offline: mosquitto"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:26:00.113Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:26:00.108Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:26:00.108Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:26:00.108Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
         },
         {
             "category": "service",
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:26:00.108Z",
+            "timestamp": "2025-11-21T23:00:00.140Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -753,7 +743,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:26:00.107Z",
+            "timestamp": "2025-11-21T23:00:00.140Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -765,7 +755,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:26:00.107Z",
+            "timestamp": "2025-11-21T23:00:00.138Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -777,7 +767,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:26:00.107Z",
+            "timestamp": "2025-11-21T23:00:00.138Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -786,10 +776,20 @@
         },
         {
             "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:59:34.551Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:25:00.128Z",
+            "timestamp": "2025-11-21T22:59:00.152Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -799,7 +799,7 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:25:00.125Z",
+            "timestamp": "2025-11-21T22:59:00.108Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -811,7 +811,7 @@
             "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:25:00.086Z",
+            "timestamp": "2025-11-21T22:59:00.095Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: apprise"
@@ -821,7 +821,7 @@
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:25:00.086Z",
+            "timestamp": "2025-11-21T22:59:00.091Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -831,7 +831,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:25:00.086Z",
+            "timestamp": "2025-11-21T22:59:00.091Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -843,7 +843,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:25:00.085Z",
+            "timestamp": "2025-11-21T22:59:00.090Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -855,7 +855,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:24:00.198Z",
+            "timestamp": "2025-11-21T22:58:00.188Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -865,57 +865,17 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:24:00.172Z",
+            "timestamp": "2025-11-21T22:58:00.144Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:24:00.137Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:24:00.135Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:24:00.135Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:24:00.134Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:24:00.133Z",
+            "timestamp": "2025-11-21T22:58:00.132Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -927,19 +887,59 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:24:00.132Z",
+            "timestamp": "2025-11-21T22:58:00.132Z",
             "severity": "warning",
             "actions": [
                 "pushover"
             ],
             "message": "⚠️ Služba offline: mosquitto"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:58:00.131Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:58:00.130Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:58:00.130Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:58:00.126Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
         },
         {
             "category": "service",
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:24:00.109Z",
+            "timestamp": "2025-11-21T22:58:00.104Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -951,7 +951,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:24:00.094Z",
+            "timestamp": "2025-11-21T22:58:00.103Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -963,7 +963,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:24:00.093Z",
+            "timestamp": "2025-11-21T22:58:00.103Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -975,7 +975,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:24:00.093Z",
+            "timestamp": "2025-11-21T22:58:00.103Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -987,27 +987,17 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:23:00.164Z",
+            "timestamp": "2025-11-21T22:57:00.137Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
-            "type": "apprise",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:23:00.127Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: apprise"
-        },
-        {
-            "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:23:00.121Z",
+            "timestamp": "2025-11-21T22:57:00.136Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -1016,10 +1006,20 @@
         },
         {
             "category": "service",
+            "type": "apprise",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:57:00.136Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: apprise"
+        },
+        {
+            "category": "service",
             "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:23:00.082Z",
+            "timestamp": "2025-11-21T22:57:00.135Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: nodered"
@@ -1029,7 +1029,7 @@
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:23:00.082Z",
+            "timestamp": "2025-11-21T22:57:00.135Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -1041,7 +1041,7 @@
             "type": "zigbee2mqtt",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:23:00.081Z",
+            "timestamp": "2025-11-21T22:57:00.134Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -1053,7 +1053,7 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:22:00.209Z",
+            "timestamp": "2025-11-21T22:56:00.220Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
@@ -1063,27 +1063,27 @@
             "type": "baikal",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:22:00.169Z",
+            "timestamp": "2025-11-21T22:56:00.176Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: baikal"
         },
         {
             "category": "service",
-            "type": "apprise",
+            "type": "nodered",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:22:00.149Z",
+            "timestamp": "2025-11-21T22:56:00.124Z",
             "severity": "info",
             "actions": [],
-            "message": "✅ Služba online: apprise"
+            "message": "✅ Služba online: nodered"
         },
         {
             "category": "service",
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:22:00.109Z",
+            "timestamp": "2025-11-21T22:56:00.121Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -1095,7 +1095,7 @@
             "type": "mosquitto",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:22:00.108Z",
+            "timestamp": "2025-11-21T22:56:00.120Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -1104,40 +1104,40 @@
         },
         {
             "category": "service",
+            "type": "nodered",
+            "location": "online",
+            "payload": "true",
+            "timestamp": "2025-11-21T22:56:00.119Z",
+            "severity": "info",
+            "actions": [],
+            "message": "✅ Služba online: nodered"
+        },
+        {
+            "category": "service",
             "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:22:00.108Z",
+            "timestamp": "2025-11-21T22:56:00.119Z",
             "severity": "info",
             "actions": [],
             "message": "✅ Služba online: apprise"
         },
         {
             "category": "service",
-            "type": "nodered",
+            "type": "apprise",
             "location": "online",
             "payload": "true",
-            "timestamp": "2025-11-21T22:22:00.108Z",
+            "timestamp": "2025-11-21T22:56:00.118Z",
             "severity": "info",
             "actions": [],
-            "message": "✅ Služba online: nodered"
-        },
-        {
-            "category": "service",
-            "type": "nodered",
-            "location": "online",
-            "payload": "true",
-            "timestamp": "2025-11-21T22:22:00.096Z",
-            "severity": "info",
-            "actions": [],
-            "message": "✅ Služba online: nodered"
+            "message": "✅ Služba online: apprise"
         },
         {
             "category": "service",
             "type": "zwavejsui",
             "location": "online",
             "payload": "false",
-            "timestamp": "2025-11-21T22:22:00.096Z",
+            "timestamp": "2025-11-21T22:56:00.102Z",
             "severity": "warning",
             "actions": [
                 "pushover"
@@ -1148,7 +1148,7 @@
     "boost_detska_target_temp": 0,
     "calendarEvents": [],
     "todayIsHoliday": false,
-    "boost_kidroom1_minutes": 109,
+    "boost_kidroom1_minutes": 75,
     "boost_kidroom1_active": true,
     "modesCfg": {
         "version": 3,
@@ -1427,54 +1427,54 @@
         "kitchen": "WORKDAY",
         "bathroom": "WORKDAY"
     },
-    "boost_bedroom_minutes": 13,
+    "boost_bedroom_minutes": 7,
     "boost_bedroom_active": true,
-    "boost_bedroom_target_temp": 22.3,
+    "boost_bedroom_target_temp": 25.2,
     "boost_kidroom1_target_temp": 25.8,
     "boost_living_minutes": 0,
     "boost_living_active": false,
     "boost_living_target_temp": 0,
-    "boost_kitchen_minutes": 49,
+    "boost_kitchen_minutes": 28,
     "boost_kitchen_active": true,
     "boost_kitchen_target_temp": 25,
-    "boost_bathroom_minutes": 0,
-    "boost_bathroom_active": false,
-    "boost_bathroom_target_temp": 0,
+    "boost_bathroom_minutes": 287,
+    "boost_bathroom_active": true,
+    "boost_bathroom_target_temp": 24.5,
     "weatherCurrent": {
         "temp_c": 1.2,
-        "wind_speed_ms": 6.694444444444445,
+        "wind_speed_ms": 7.722222222222222,
         "wind_dir_deg": 330,
         "octant": "NW",
-        "timestamp": "2025-11-21T22:32:00.118Z"
+        "timestamp": "2025-11-21T23:06:00.114Z"
     },
     "weather_current": {
         "location": "Bratislava",
         "country": "SK",
         "temp": 1.2,
-        "feels_like": -4.2,
+        "feels_like": -4.7,
         "temp_min": 0.9,
         "temp_max": 1.8,
-        "pressure": 1018,
-        "humidity": 72,
-        "weather": "Clouds",
-        "description": "zamračené",
-        "icon": "04n",
-        "wind_speed": 24.1,
+        "pressure": 1019,
+        "humidity": 73,
+        "weather": "Snow",
+        "description": "slabé sneženie",
+        "icon": "13n",
+        "wind_speed": 27.8,
         "wind_deg": 330,
         "wind_direction": "SZ",
         "clouds": 100,
         "visibility": 10000,
         "sunrise": "2025-11-21T06:07:25.000Z",
-        "sunset": "2025-11-21T15:07:47.000Z",
-        "timestamp": "2025-11-21T22:32:00.111Z",
-        "dt": "2025-11-21T22:26:03.000Z",
+        "sunset": "2025-11-21T15:07:49.000Z",
+        "timestamp": "2025-11-21T23:06:00.110Z",
+        "dt": "2025-11-21T22:58:00.000Z",
         "octant": "NW",
-        "wind_speed_ms": 6.7
+        "wind_speed_ms": 7.7
     },
     "weather_forecast": [
         {
             "hour": 4,
-            "temp": 1.4,
+            "temp": 1.2,
             "weather": "Clouds",
             "description": "zamračené",
             "icon": "04n",
@@ -1504,5 +1504,6 @@
             "icon": "04n",
             "dt": "2025-11-22T21:00:00.000Z"
         }
-    ]
+    ],
+    "activeMode": "WORKDAY"
 }
