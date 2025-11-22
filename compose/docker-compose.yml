@@ -57,9 +57,9 @@ services:
   
   zwavejsui:
     image: zwavejs/zwave-js-ui:latest
-    restart: unless-stopped
-    ports: ["8091:8091"]
-    devices: [ "/dev/ttyACM0:/dev/ttyACM0" ]   # uprav podľa RPi
+    restart: "no"  # Nereštartuj ak zariadenie neexistuje
+    ports: ["${ZWAVE_PORT:-8091}:8091"]
+    devices: [ "${ZWAVE_DEVICE}:/dev/ttyACM0" ]
     environment: [ "TZ=Europe/Bratislava" ]
     volumes:
       - zwave_data:/usr/src/app/store
@@ -67,9 +67,9 @@ services:
 
   zigbee2mqtt:
     image: koenkk/zigbee2mqtt:latest
-    restart: unless-stopped
-    ports: ["8080:8080"]
-    devices: [ "/dev/ttyUSB0:/dev/ttyACM0" ]   # uprav podľa USB Zigbee adaptéra
+    restart: "no"  # Nereštartuj ak zariadenie neexistuje
+    ports: ["${Z2M_PORT:-8090}:8080"]
+    devices: [ "${ZIGBEE_DEVICE}:/dev/ttyACM0" ]
     profiles: [zigbee]
     depends_on: [mosquitto]
     environment:
@@ -81,28 +81,28 @@ services:
   influxdb:
     image: influxdb:2.7-alpine
     restart: unless-stopped
-    ports: ["8086:8086"]
+    ports: ["${INFLUX_PORT:-8086}:8086"]
     profiles: [metrics]
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=smarthome123
-      - DOCKER_INFLUXDB_INIT_ORG=smarthome
-      - DOCKER_INFLUXDB_INIT_BUCKET=sensors
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD:-admin123}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG:-Home}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET:-smarthome}
       - DOCKER_INFLUXDB_INIT_RETENTION=30d
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-changeme}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN:-changeme}
     volumes:
       - influxdb_data:/var/lib/influxdb2
 
   grafana:
     image: grafana/grafana:latest
     restart: unless-stopped
-    ports: ["3000:3000"]
+    ports: ["${GRAFANA_PORT:-3000}:3000"]
     profiles: [metrics]
     depends_on: [influxdb]
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=smarthome
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
       - GF_INSTALL_PLUGINS=
     volumes:
       - grafana_data:/var/lib/grafana

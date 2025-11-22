@@ -99,7 +99,7 @@ Baïkal CalDAV ───┘         │
    - **Node-RED**: `http://localhost:1880`
    - **Baïkal**: `http://localhost:8800/admin/`
    - **Z-Wave JS UI**: `http://localhost:8091` (ak zapnutý profil `zwave`)
-   - **Zigbee2MQTT**: `http://localhost:8080` (ak zapnutý profil `zigbee`)
+   - **Zigbee2MQTT**: `http://localhost:8090` (ak zapnutý profil `zigbee`)
    - **Grafana**: `http://localhost:3000` (ak zapnutý profil `metrics`)
    - **InfluxDB**: `http://localhost:8086` (ak zapnutý profil `metrics`)
 
@@ -245,51 +245,297 @@ bedroom:
 
 ## 📊 InfluxDB & Grafana (Metriky)
 
-### Automatické logovanie senzorov do InfluxDB
+### Čo sa meria a prečo?
 
-Node-RED môže automaticky zapisovať všetky senzorové hodnoty do InfluxDB.
+Systém automaticky zbiera metriky z MQTT a ukladá ich do **InfluxDB** (časová databáza). **Grafana** potom vizualizuje historické dáta.
 
-**Príklad flow (pridaj do Node-RED):**
+**Merané metriky:**
 
-1. **MQTT Input** → `stat/hvac/+/current_temp`
-2. **Function node** - Formátovanie pre InfluxDB:
-```javascript
-const room = msg.topic.split('/')[2];
-return {
-    payload: {
-        measurement: 'temperature',
-        fields: {
-            value: parseFloat(msg.payload)
-        },
-        tags: {
-            room: room,
-            sensor: 'hvac'
-        },
-        timestamp: new Date()
-    }
-};
+| Metrika | MQTT Topic | Účel |
+|---------|-----------|------|
+| **Teplota** | `stat/hvac/+/current_temp` | Sledovanie teplotných trendov, porovnanie s cieľom |
+| **Vlhkosť** | `stat/hvac/+/humidity` | Monitoring vlhkosti v miestnostiach, optimalizácia vetrania |
+| **Cieľová teplota** | `virt/room/+/target_temp` | Sledovanie weather correlation offsetov |
+| **Weather offset** | extrahované z `target_temp` JSON | Koľko °C pridala/odobrala weather correlation |
+| **Override aktivity** | `virt/room/+/override` | Kedy a ako často užívateľ manuálne mení teplotu |
+| **Boost trvanie** | `virt/boost/+/minutes` | Štatistika použitia boost režimu |
+| **HVAC ON/OFF** | `stat/hvac/+/enabled` | Uptime kúrenia, efektivita režimov |
+
+### 1. Aktivácia metrics profilu
+
+```bash
+cd /home/pi/smarthome/compose
+
+# Nastav token v .env (vygeneruj náhodný)
+openssl rand -hex 32  # skopíruj výstup
+nano .env  # nastav INFLUX_TOKEN=<vygenerovaný token>
+
+# Spusti InfluxDB + Grafana
+docker compose --profile metrics up -d
+
+# Over že bežia
+docker compose ps influxdb grafana
 ```
-3. **InfluxDB Out** node:
-   - Server: `http://influxdb:8086`
-   - Token: z `.env` súboru (`INFLUXDB_TOKEN`)
-   - Organization: `smarthome`
-   - Bucket: `sensors`
 
-### Grafana Dashboards
+### 2. Konfigurácia InfluxDB v Node-RED
 
-Po zapnutí `metrics` profilu:
+#### A) Inštalácia InfluxDB node
 
-1. Otvor Grafana: `http://localhost:3000` (admin/smarthome)
-2. **Add Data Source**:
-   - Type: InfluxDB
-   - URL: `http://influxdb:8086`
-   - Organization: `smarthome`
-   - Token: `${INFLUXDB_TOKEN}` z `.env`
-   - Default bucket: `sensors`
-3. **Import Dashboard** alebo vytvor vlastný:
-   - Teploty po miestnostiach (line chart)
-   - Vlhkosť (gauge)
-   - Weather correlation offset (area chart)
+1. Otvor Node-RED: `http://localhost:1880`
+2. Menu (☰) → **Manage palette** → **Install**
+3. Hľadaj: `node-red-contrib-influxdb`
+4. Klikni **Install**
+
+#### B) Vytvorenie InfluxDB Server Config
+
+1. Pridaj akýkoľvek **influxdb out** node do canvasu (len dočasne)
+2. Double-click → vedľa **Server** klikni **✏️ (Add new influxdb...)**
+3. Nastav:
+   - **Version**: `2.0`
+   - **URL**: `http://influxdb:8086`
+   - **Token**: `${INFLUX_TOKEN}` z `.env` súboru
+   - **Organization**: `Home` (alebo hodnota z `INFLUX_ORG`)
+   - **Bucket**: `smarthome` (alebo hodnota z `INFLUX_BUCKET`)
+4. Klikni **Add** → **Done**
+
+#### C) Flow pre automatické logovanie teplôt
+
+**Kód flow (importuj do Node-RED):**
+
+```json
+[
+  {
+    "id": "mqtt_temp_in",
+    "type": "mqtt in",
+    "name": "Teploty",
+    "topic": "stat/hvac/+/current_temp",
+    "qos": "0",
+    "broker": "mqtt_broker",
+    "x": 120,
+    "y": 100,
+    "wires": [["format_temp"]]
+  },
+  {
+    "id": "format_temp",
+    "type": "function",
+    "name": "Format for InfluxDB",
+    "func": "const room = msg.topic.split('/')[2];\nconst temp = parseFloat(msg.payload);\n\nif (isNaN(temp)) return null;\n\nmsg.payload = {\n    measurement: 'temperature',\n    fields: { value: temp },\n    tags: { room: room, sensor: 'hvac' },\n    timestamp: new Date()\n};\nreturn msg;",
+    "x": 320,
+    "y": 100,
+    "wires": [["influx_out"]]
+  },
+  {
+    "id": "influx_out",
+    "type": "influxdb out",
+    "name": "→ InfluxDB",
+    "influxdb": "your_influxdb_config_id",
+    "x": 540,
+    "y": 100,
+    "wires": []
+  }
+]
+```
+
+**Postup:**
+1. Copy JSON vyššie
+2. Node-RED menu → **Import** → Paste → **Import**
+3. Double-click na **influx_out** node
+4. Vyber **Server** (InfluxDB config z kroku B)
+5. **Deploy**
+
+#### D) Podobné flow pre ostatné metriky
+
+**Vlhkosť:**
+```javascript
+// MQTT: stat/hvac/+/humidity
+const room = msg.topic.split('/')[2];
+msg.payload = {
+    measurement: 'humidity',
+    fields: { value: parseFloat(msg.payload) },
+    tags: { room: room },
+    timestamp: new Date()
+};
+return msg;
+```
+
+**Weather offset (z target_temp JSON):**
+```javascript
+// MQTT: virt/room/+/target_temp
+const room = msg.topic.split('/')[2];
+let data;
+try {
+    data = typeof msg.payload === 'object' ? msg.payload : JSON.parse(msg.payload);
+} catch(e) {
+    return null;
+}
+
+if (data.delta !== undefined) {
+    msg.payload = {
+        measurement: 'weather_offset',
+        fields: { 
+            offset: parseFloat(data.delta),
+            original: parseFloat(data.originalValue),
+            adjusted: parseFloat(data.value)
+        },
+        tags: { room: room },
+        timestamp: new Date()
+    };
+    return msg;
+}
+return null;
+```
+
+**HVAC enabled/disabled:**
+```javascript
+// MQTT: stat/hvac/+/enabled
+const room = msg.topic.split('/')[2];
+const enabled = (msg.payload === 'true' || msg.payload === true);
+msg.payload = {
+    measurement: 'hvac_state',
+    fields: { enabled: enabled ? 1 : 0 },
+    tags: { room: room },
+    timestamp: new Date()
+};
+return msg;
+```
+
+### 3. Grafana Dashboard Setup
+
+#### A) Prvé prihlásenie
+
+1. Otvor: `http://localhost:3000`
+2. Login: `admin` / `admin123` (alebo hodnoty z `.env`)
+3. (Voliteľné) Zmeň heslo pri prvom prihlásení
+
+#### B) Pridanie InfluxDB Data Source
+
+1. **☰ Menu** → **Connections** → **Data Sources** → **Add data source**
+2. Vyber **InfluxDB**
+3. Nastav:
+   - **Name**: `InfluxDB SmartHome`
+   - **Query Language**: `Flux`
+   - **URL**: `http://influxdb:8086`
+   - **Auth**: Vypni všetko (Basic auth, TLS, atď.)
+   - **Organization**: `Home` (z `.env`)
+   - **Token**: `${INFLUX_TOKEN}` (z `.env`)
+   - **Default Bucket**: `smarthome` (z `.env`)
+4. **Save & Test** → Malo by ukázať ✅ "datasource is working"
+
+#### C) Vytvorenie dashboardu
+
+**Dashboard 1: Teploty v čase (Line Chart)**
+
+1. **☰ Menu** → **Dashboards** → **New Dashboard** → **Add visualization**
+2. Vyber **InfluxDB SmartHome** data source
+3. V query editore prepni na **Code** (vpravo hore)
+4. Flux query:
+```flux
+from(bucket: "smarthome")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r._measurement == "temperature")
+  |> filter(fn: (r) => r._field == "value")
+  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+```
+5. Vpravo v **Panel options**:
+   - Title: `Teploty po miestnostiach`
+   - Legend: `{{room}}`
+6. **Apply** → **Save dashboard** → Pomenuj: `SmartHome Overview`
+
+**Dashboard 2: Aktuálna vlhkosť (Gauge)**
+
+1. Pridaj nový panel: **Add** → **Visualization**
+2. Vyber **Gauge**
+3. Flux query:
+```flux
+from(bucket: "smarthome")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "humidity")
+  |> filter(fn: (r) => r._field == "value")
+  |> last()
+```
+4. Nastav limity:
+   - Min: 0
+   - Max: 100
+   - Thresholds: 30 (red), 40 (yellow), 50 (green)
+5. **Apply**
+
+**Dashboard 3: Weather Offset Impact (Area Chart)**
+
+1. Nový panel → **Time series**
+2. Flux query:
+```flux
+from(bucket: "smarthome")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r._measurement == "weather_offset")
+  |> filter(fn: (r) => r._field == "offset")
+  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+```
+3. **Panel options**:
+   - Title: `Weather Correlation Offset`
+   - Legend: `{{room}}`
+   - Graph style: `Lines` → Area fill opacity: `0.3`
+4. **Apply**
+
+**Dashboard 4: HVAC Uptime (Stat panel)**
+
+1. Nový panel → **Stat**
+2. Flux query:
+```flux
+from(bucket: "smarthome")
+  |> range(start: -24h)
+  |> filter(fn: (r) => r._measurement == "hvac_state")
+  |> filter(fn: (r) => r._field == "enabled")
+  |> mean()
+  |> map(fn: (r) => ({ r with _value: r._value * 100.0 }))
+```
+3. **Panel options**:
+   - Title: `HVAC Uptime (24h)`
+   - Unit: `Percent (0-100)`
+   - Color scheme: Thresholds
+4. **Apply**
+
+#### D) Export/Import dashboardu
+
+**Export:**
+1. Dashboard → ⚙️ Settings → **JSON Model** → Copy JSON
+2. Ulož do `/home/pi/smarthome/grafana-dashboard.json`
+
+**Import:**
+1. **☰ Menu** → **Dashboards** → **Import**
+2. Upload JSON súbor
+3. Vyber **InfluxDB SmartHome** ako data source
+
+### 4. Údržba a troubleshooting
+
+**Over že dáta prúdia do InfluxDB:**
+```bash
+# InfluxDB CLI (v kontajneri)
+docker exec -it compose-influxdb-1 influx query \
+  --org Home \
+  --token "${INFLUX_TOKEN}" \
+  'from(bucket:"smarthome") |> range(start: -1h) |> limit(n:10)'
+```
+
+**Node-RED debug:**
+1. Pridaj **debug node** za function node (pred InfluxDB out)
+2. Over že payload má správny formát:
+```json
+{
+  "measurement": "temperature",
+  "fields": { "value": 21.5 },
+  "tags": { "room": "spalna" },
+  "timestamp": "2025-11-22T..."
+}
+```
+
+**Grafana no data:**
+- Over čas range (vpravo hore, napr. "Last 6 hours")
+- Skontroluj bucket name v query
+- Verify InfluxDB token v data source settings
+
+**Retencia dát:**
+- Default: 30 dní (nastavené v docker-compose.yml)
+- Zmena: InfluxDB UI → **Data** → **Buckets** → Edit retention
 
 ## 🔧 Údržba
 
