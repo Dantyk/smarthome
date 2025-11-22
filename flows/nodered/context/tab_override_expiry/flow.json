@@ -4,14 +4,12 @@
             "active": false
         },
         "detska": {
-            "active": true,
-            "value": 19.6,
-            "until": "2025-11-22T16:58:41.351Z"
+            "active": false
         },
         "obyvacka": {
             "active": true,
-            "value": 24.9,
-            "until": "2025-11-22T17:01:11.352Z"
+            "value": 19.2,
+            "until": "2025-11-22T17:02:31.365Z"
         },
         "kuchyna": {
             "active": false
