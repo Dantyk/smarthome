@@ -1,0 +1,152 @@
+[
+  {
+    "id": "influx_test_flow",
+    "type": "tab",
+    "label": "InfluxDB Test",
+    "disabled": false,
+    "info": "Testovací flow pre overenie InfluxDB zápisu"
+  },
+  {
+    "id": "mqtt_temp_in",
+    "type": "mqtt in",
+    "z": "influx_test_flow",
+    "name": "Teploty MQTT",
+    "topic": "stat/hvac/+/current_temp",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 130,
+    "y": 80,
+    "wires": [["format_temp"]]
+  },
+  {
+    "id": "format_temp",
+    "type": "function",
+    "z": "influx_test_flow",
+    "name": "Format for InfluxDB",
+    "func": "const room = msg.topic.split('/')[2];\nconst temp = parseFloat(msg.payload);\n\nif (isNaN(temp)) return null;\n\nmsg.payload = {\n    measurement: 'temperature',\n    fields: { value: temp },\n    tags: { room: room, sensor: 'hvac' },\n    timestamp: new Date()\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 80,
+    "wires": [["debug_temp", "influx_out"]]
+  },
+  {
+    "id": "debug_temp",
+    "type": "debug",
+    "z": "influx_test_flow",
+    "name": "Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 560,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "influx_out",
+    "type": "comment",
+    "z": "influx_test_flow",
+    "name": "⚠️ Pridaj 'influxdb out' node sem",
+    "info": "1. Inštaluj: node-red-contrib-influxdb\n2. Pridaj 'influxdb out' node\n3. Konfigurácia:\n   - Server: http://influxdb:8086\n   - Token: z .env súboru\n   - Organization: Home\n   - Bucket: smarthome",
+    "x": 630,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "mqtt_humidity_in",
+    "type": "mqtt in",
+    "z": "influx_test_flow",
+    "name": "Vlhkosť MQTT",
+    "topic": "stat/hvac/+/humidity",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 130,
+    "y": 180,
+    "wires": [["format_humidity"]]
+  },
+  {
+    "id": "format_humidity",
+    "type": "function",
+    "z": "influx_test_flow",
+    "name": "Format for InfluxDB",
+    "func": "const room = msg.topic.split('/')[2];\nconst humidity = parseFloat(msg.payload);\n\nif (isNaN(humidity)) return null;\n\nmsg.payload = {\n    measurement: 'humidity',\n    fields: { value: humidity },\n    tags: { room: room },\n    timestamp: new Date()\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 180,
+    "wires": [["debug_humidity", "influx_out2"]]
+  },
+  {
+    "id": "debug_humidity",
+    "type": "debug",
+    "z": "influx_test_flow",
+    "name": "Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 560,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "influx_out2",
+    "type": "comment",
+    "z": "influx_test_flow",
+    "name": "⚠️ Pridaj 'influxdb out' node sem",
+    "info": "",
+    "x": 630,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "inject_test",
+    "type": "inject",
+    "z": "influx_test_flow",
+    "name": "Test inject",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "stat/hvac/spalna/current_temp",
+    "payload": "21.5",
+    "payloadType": "num",
+    "x": 130,
+    "y": 280,
+    "wires": [["format_temp"]]
+  }
+]

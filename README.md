@@ -537,6 +537,49 @@ docker exec -it compose-influxdb-1 influx query \
 - Default: 30 dní (nastavené v docker-compose.yml)
 - Zmena: InfluxDB UI → **Data** → **Buckets** → Edit retention
 
+### 5. Kontrola stavu služieb
+
+Pre rýchlu kontrolu všetkých služieb použite helper script:
+
+```bash
+cd /home/pi/smarthome/compose
+./check-services.sh
+```
+
+**Výstup ukáže:**
+- ✅ Bežiace služby (s portami)
+- ❌ Neaktívne služby
+- ⏸️ Služby vypnuté profilom
+- ⚠️ Chybové stavy
+- 📈 InfluxDB data collection status
+
+**Manuálna kontrola:**
+```bash
+# Všetky služby
+docker compose ps
+
+# Ktoré profily sú aktívne
+grep COMPOSE_PROFILES compose/.env
+
+# Logy konkrétnej služby
+docker compose logs -f influxdb
+docker compose logs -f grafana
+
+# Over InfluxDB API
+curl -s "http://localhost:8086/api/v2/buckets?org=Home" \
+  -H "Authorization: Token ${INFLUX_TOKEN}"
+```
+
+**Časté problémy:**
+
+| Problém | Riešenie |
+|---------|----------|
+| `Zigbee2MQTT: Exited (127)` | Zariadenie `/dev/ttyUSB0` neexistuje - over ZIGBEE_DEVICE v .env |
+| `Z-Wave: NOT RUNNING` | Zariadenie `/dev/ttyACM0` neexistuje - over ZWAVE_DEVICE v .env |
+| `InfluxDB: 401 Unauthorized` | Token nie je správny - regeneruj: `openssl rand -hex 32` |
+| `Grafana: No data` | Node-RED flows nie sú nakonfigurované - pozri sekciu vyššie |
+| `Profil nezapnutý` | Pridaj do COMPOSE_PROFILES v .env, napr.: `metrics,zigbee,zwave` |
+
 ## 🔧 Údržba
 
 ### Logy
