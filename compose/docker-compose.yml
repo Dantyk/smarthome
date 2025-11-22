@@ -69,8 +69,8 @@ services:
       context: ../ui/smarthome-ui
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_MQTT_BROKER: ws://192.168.1.178:9001
-        NEXT_PUBLIC_API_BASE: http://192.168.1.178:1880
+        NEXT_PUBLIC_MQTT_BROKER: ws://mosquitto:9001
+        NEXT_PUBLIC_API_BASE: http://nodered:1880
         NEXT_PUBLIC_TZ: Europe/Bratislava
         NEXT_PUBLIC_LOCATION: Bratislava, SK
     restart: unless-stopped

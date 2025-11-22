@@ -13,19 +13,21 @@
             "active": false
         },
         "living": {
-            "active": false
+            "active": true
         },
         "kitchen": {
-            "active": false
+            "active": true
         },
         "bathroom": {
-            "active": false
+            "active": true
         },
         "bedroom": {
-            "active": false
+            "active": true,
+            "value": 21,
+            "until": "2025-11-22T15:15:22.974Z"
         },
         "kidroom1": {
-            "active": false
+            "active": true
         }
     }
 }

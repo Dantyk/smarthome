@@ -2044,7 +2044,7 @@
     "type": "function",
     "z": "tab_api",
     "name": "Rooms Capabilities Handler",
-    "func": "const cfg = global.get('modesCfg');\n\nif (!cfg) {\n    msg.statusCode = 503;\n    msg.payload = {\n        success: false,\n        error: 'Configuration not loaded'\n    };\n    return msg;\n}\n\nconst capabilities = cfg.room_capabilities || {};\n\nmsg.payload = {\n    success: true,\n    data: capabilities,\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+    "func": "const cfg = global.get('modesCfg');\n\nif (!cfg) {\n    msg.statusCode = 503;\n    msg.payload = {\n        success: false,\n        error: 'Configuration not loaded'\n    };\n    return msg;\n}\n\nconst capabilities = cfg.room_capabilities || {};\nconst rooms = cfg.rooms || [];\nconst labels = cfg.room_labels || {};\n\nmsg.payload = {\n    success: true,\n    data: {\n        capabilities: capabilities,\n        rooms: rooms,\n        labels: labels\n    },\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",

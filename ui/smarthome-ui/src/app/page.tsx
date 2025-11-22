@@ -28,24 +28,22 @@ export default function Home() {
   const rooms = useHouse(s=>s.rooms);
   const weather = useHouse(s=>s.weather);
   const [roomCapabilities, setRoomCapabilities] = useState<Record<string, RoomCapabilities>>({});
+  const [roomOrder, setRoomOrder] = useState<string[]>([]);
+  const [roomLabels, setRoomLabels] = useState<Record<string, string>>({});
   const { theme, toggleTheme } = useTheme();
   const colors = useMemo(() => themes[theme], [theme]);
   const router = useRouter();
   const tz = process.env.NEXT_PUBLIC_TZ || 'Europe/Bratislava';
   const locationNameEnv = process.env.NEXT_PUBLIC_LOCATION || 'Bratislava, SK';
   
-  // Initialize and stabilize room list in state to avoid re-renders changing order
-  const roomList = useHouse(s => s.roomList);
-  useEffect(() => {
-    if (Object.keys(rooms).length > 0 && (!roomList || roomList.length === 0)) {
-      const newRoomList = Object.keys(rooms).sort();
-      useHouse.setState({ roomList: newRoomList });
-      console.log('[UI] Initialized stable roomList:', newRoomList);
+  // Use room order from API, fallback to existing room keys
+  const ROOM_LIST = useMemo(() => {
+    if (roomOrder.length > 0) {
+      // Filter to only show rooms that actually exist in state
+      return roomOrder.filter(r => rooms[r]);
     }
-  }, [rooms, roomList]);
-  
-  // Build room list from persisted `roomList` if present, otherwise from actual rooms keys.
-  const ROOM_LIST = roomList && roomList.length > 0 ? roomList : (rooms ? Object.keys(rooms).sort() : []);
+    return Object.keys(rooms).sort();
+  }, [roomOrder, rooms]);
   const [now, setNow] = useState<string>('');
   useEffect(() => {
     const fmt = new Intl.DateTimeFormat('sk-SK', { 
@@ -66,18 +64,18 @@ export default function Home() {
   
   const [sliders, setSliders] = useState<Record<string,number>>({});
   const [burstDurations, setBurstDurations] = useState<Record<string,number>>({
-    bedroom: 1,
-    kidroom1: 1,
-    living: 1,
-    kitchen: 1,
-    bathroom: 1
+    spalna: 1,
+    detska: 1,
+    obyvacka: 1,
+    kuchyna: 1,
+    kupelna: 1
   });
 
   const RoomControls = dynamic(() => import('@/components/RoomControls'), { ssr: false });
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
   
-  // Load room capabilities from API
+  // Load room capabilities, order, and labels from API
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -94,11 +92,13 @@ export default function Home() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         if (json.success && json.data) {
-          setRoomCapabilities(json.data);
-          console.log('[UI] Room capabilities loaded:', json.data);
+          setRoomCapabilities(json.data.capabilities || json.data);
+          setRoomOrder(json.data.rooms || []);
+          setRoomLabels(json.data.labels || {});
+          console.log('[UI] Room data loaded:', json.data);
         }
       } catch (err) {
-        console.error('[UI] Failed to load room capabilities:', err);
+        console.error('[UI] Failed to load room data:', err);
       }
     };
     loadCapabilities();
@@ -377,6 +377,7 @@ export default function Home() {
           <div key={r}>
             <RoomCard
               room={r}
+              roomLabel={roomLabels[r] || r}
               colors={colors}
               theme={theme}
               capabilities={roomCapabilities[r]}

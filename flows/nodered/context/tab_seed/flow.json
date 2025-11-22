@@ -28,10 +28,10 @@
         "hourly": true
     },
     "last_rooms": [
-        "bedroom",
-        "kidroom1",
-        "living",
-        "kitchen",
-        "bathroom"
+        "spalna",
+        "detska",
+        "obyvacka",
+        "kuchyna",
+        "kupelna"
     ]
 }

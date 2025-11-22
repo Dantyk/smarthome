@@ -14,6 +14,7 @@ interface RoomCapabilities {
 
 interface Props {
   room: string;
+  roomLabel?: string;
   colors: any;
   theme: string;
   capabilities?: RoomCapabilities;
@@ -32,9 +33,10 @@ const ICON_MAP: Record<string, string> = {
   'bathroom': '🚿', 'kupelna': '🚿', 'kúpeľňa': '🚿'
 };
 
-const RoomCard: React.FC<Props> = ({ room, colors, theme, capabilities, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
+const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilities, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
   // subscribe only to the specific room slice
   const rm = useHouse((s: any) => s.rooms?.[room] || {});
+  const displayName = roomLabel || room;
 
   // Determine if room is readonly based on capabilities (no temp_control)
   const isReadonly = capabilities ? (capabilities.temp_control === false) : (rm?.readonly === true);
@@ -48,9 +50,9 @@ const RoomCard: React.FC<Props> = ({ room, colors, theme, capabilities, activate
   const sliderValue = effectiveTarget;
   const specialIcon = (boostActive ? '🔥' : (rm?.override && currentValue !== undefined && effectiveTarget !== undefined ? (currentValue > effectiveTarget + 0.5 ? '🔥' : (currentValue < effectiveTarget ? '❄️' : undefined)) : undefined));
   
-  // Match icon by room key or label/displayName/title (case-insensitive, normalized)
-  const roomLabel = (rm?.label || rm?.displayName || rm?.title || room).toLowerCase().replace(/[_-]/g, '');
-  const matchedIcon = ICON_MAP[room.toLowerCase()] || ICON_MAP[roomLabel];
+  // Match icon by room key or display name (case-insensitive, normalized)
+  const iconKey = displayName.toLowerCase().replace(/[_-\s]/g, '');
+  const matchedIcon = ICON_MAP[room.toLowerCase()] || ICON_MAP[iconKey];
   const icon = matchedIcon || specialIcon;
   const remaining = rm?.overrideUntil ? new Date(rm.overrideUntil) : undefined;
 
@@ -75,7 +77,7 @@ const RoomCard: React.FC<Props> = ({ room, colors, theme, capabilities, activate
         <span style={{ fontSize: 32, pointerEvents: 'none' }}>{icon}</span>
         <div style={{ flex: 1 }}>
           <h3 className="room-title" style={{ margin: 0, fontSize: 18, fontWeight: 600, color: colors.text ?? '#f1f5f9' }}>
-            {(rm && (rm.label || rm.displayName || rm.title)) || room.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+            {displayName}
           </h3>
           {boostActive && boostMinutes > 0 && (
             <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 500 }}>
