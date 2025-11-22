@@ -12,8 +12,11 @@ import { useRouter } from 'next/navigation';
 import React from 'react';
 import RoomCard from '@/components/RoomCard';
 
-const ROOM_CONFIG: Record<string, {readonly?: boolean}> = {
-  bathroom: { readonly: true }
+type RoomCapabilities = {
+  temp_sensor?: boolean;
+  humidity_sensor?: boolean;
+  hvac_control?: boolean;
+  temp_control?: boolean;
 };
 
 export default function Home() {
@@ -24,6 +27,7 @@ export default function Home() {
   const mode = useHouse(s=>s.mode) ?? '—';
   const rooms = useHouse(s=>s.rooms);
   const weather = useHouse(s=>s.weather);
+  const [roomCapabilities, setRoomCapabilities] = useState<Record<string, RoomCapabilities>>({});
   const { theme, toggleTheme } = useTheme();
   const colors = useMemo(() => themes[theme], [theme]);
   const router = useRouter();
@@ -72,6 +76,30 @@ export default function Home() {
   const RoomControls = dynamic(() => import('@/components/RoomControls'), { ssr: false });
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
+  
+  // Load room capabilities from API
+  useEffect(() => {
+    const loadCapabilities = async () => {
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
+        if (!apiBase) {
+          console.warn('[UI] No API base configured for capabilities');
+          return;
+        }
+        const url = `${apiBase.replace(/\/$/, '')}/api/rooms/capabilities`;
+        const res = await fetch(url, { headers: { accept: 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setRoomCapabilities(json.data);
+          console.log('[UI] Room capabilities loaded:', json.data);
+        }
+      } catch (err) {
+        console.error('[UI] Failed to load room capabilities:', err);
+      }
+    };
+    loadCapabilities();
+  }, []);
   
   // Sync slider state with incoming boost target temps from MQTT
   useEffect(() => {
@@ -348,6 +376,7 @@ export default function Home() {
               room={r}
               colors={colors}
               theme={theme}
+              capabilities={roomCapabilities[r]}
               activateBurst={activateBurst}
               cancelOverride={cancelOverride}
               toggleHvac={toggleHvac}

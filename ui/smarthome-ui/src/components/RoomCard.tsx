@@ -5,10 +5,18 @@ import { useHouse } from '@/store/useHouse';
 
 const RoomControls = dynamic(() => import('@/components/RoomControls'), { ssr: false });
 
+interface RoomCapabilities {
+  temp_sensor?: boolean;
+  humidity_sensor?: boolean;
+  hvac_control?: boolean;
+  temp_control?: boolean;
+}
+
 interface Props {
   room: string;
   colors: any;
   theme: string;
+  capabilities?: RoomCapabilities;
   activateBurst: (room: string, targetTemp: number, duration: number) => void;
   cancelOverride: (room: string) => void;
   toggleHvac: (room: string, enabled: boolean) => void;
@@ -24,11 +32,12 @@ const ICON_MAP: Record<string, string> = {
   'bathroom': '🚿', 'kupelna': '🚿', 'kúpeľňa': '🚿'
 };
 
-const RoomCard: React.FC<Props> = ({ room, colors, theme, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
+const RoomCard: React.FC<Props> = ({ room, colors, theme, capabilities, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
   // subscribe only to the specific room slice
   const rm = useHouse((s: any) => s.rooms?.[room] || {});
 
-  const isReadonly = (rm?.readonly === true);
+  // Determine if room is readonly based on capabilities (no temp_control)
+  const isReadonly = capabilities ? (capabilities.temp_control === false) : (rm?.readonly === true);
   const currentValue = rm?.current ?? 0;
   const targetValue = Number.isFinite(Number(rm?.target)) ? Number(rm?.target) : 21;
   const boostActive = rm?.boostActive ?? false;
@@ -80,7 +89,7 @@ const RoomCard: React.FC<Props> = ({ room, colors, theme, activateBurst, cancelO
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {(!isReadonly) && (
+          {(capabilities?.hvac_control !== false) && (
             <button
               onClick={() => toggleHvac(room, !(rm?.hvacEnabled ?? true))}
               style={{
@@ -104,7 +113,7 @@ const RoomCard: React.FC<Props> = ({ room, colors, theme, activateBurst, cancelO
           {(!isReadonly) ? `${currentValue.toFixed(1)}°C` : '— °C'}
         </div>
         <div style={{ fontSize: 16, color: colors.textSecondary, marginTop: 8, minHeight: 24 }}>
-          {rm?.humidity !== undefined ? `💧 ${rm.humidity.toFixed(0)}%` : '\u00A0'}
+          {(capabilities?.humidity_sensor !== false && rm?.humidity !== undefined) ? `💧 ${rm.humidity.toFixed(0)}%` : '\u00A0'}
         </div>
       </div>
 

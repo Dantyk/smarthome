@@ -2023,6 +2023,42 @@
     ]
   },
   {
+    "id": "api_rooms_capabilities_in",
+    "type": "http in",
+    "z": "tab_api",
+    "name": "GET /api/rooms/capabilities",
+    "url": "/api/rooms/capabilities",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 620,
+    "wires": [
+      [
+        "api_rooms_capabilities_handler"
+      ]
+    ]
+  },
+  {
+    "id": "api_rooms_capabilities_handler",
+    "type": "function",
+    "z": "tab_api",
+    "name": "Rooms Capabilities Handler",
+    "func": "const cfg = global.get('modesCfg');\n\nif (!cfg) {\n    msg.statusCode = 503;\n    msg.payload = {\n        success: false,\n        error: 'Configuration not loaded'\n    };\n    return msg;\n}\n\nconst capabilities = cfg.room_capabilities || {};\n\nmsg.payload = {\n    success: true,\n    data: capabilities,\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 620,
+    "wires": [
+      [
+        "api_response"
+      ]
+    ]
+  },
+  {
     "id": "api_calendar_events_in",
     "type": "http in",
     "z": "tab_api",

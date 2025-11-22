@@ -13,6 +13,34 @@ groups:
   bedroom: [bedroom, kidroom1]
   living: [living, kitchen]
 
+# Room capabilities (sensors and actuators availability)
+room_capabilities:
+  bedroom:
+    temp_sensor: true
+    humidity_sensor: true
+    hvac_control: true
+    temp_control: true
+  kidroom1:
+    temp_sensor: true
+    humidity_sensor: true
+    hvac_control: true
+    temp_control: true
+  living:
+    temp_sensor: true
+    humidity_sensor: false   # Vlhkosť nedostupná
+    hvac_control: true
+    temp_control: true
+  kitchen:
+    temp_sensor: true
+    humidity_sensor: true
+    hvac_control: true
+    temp_control: true
+  bathroom:
+    temp_sensor: true
+    humidity_sensor: true
+    hvac_control: false      # Bez HVAC switch
+    temp_control: false      # Bez možnosti nastaviť cieľ
+
 # Temperature limits
 limits:
   default:
