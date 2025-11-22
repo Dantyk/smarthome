@@ -3,6 +3,7 @@ import mqtt, { MqttClient } from 'mqtt';
 let client: MqttClient | null = null;
 let refCount = 0;
 let lastDisconnectAt: number | null = null;
+let globalHandlers: Map<string, Set<(t: string, m: Uint8Array) => void>> = new Map();
 
 export function getMqtt() {
   // Only initialize in browser
@@ -30,6 +31,21 @@ export function getMqtt() {
   });
 
   refCount = 1;
+
+  // Single global message handler - dispatch to all subscriptions
+  client.on('message', (topic: string, message: Buffer) => {
+    for (const [filter, callbacks] of globalHandlers.entries()) {
+      if (topicMatches(filter, topic)) {
+        for (const cb of callbacks) {
+          try {
+            cb(topic, message);
+          } catch (err) {
+            console.error('[MQTT] Handler error:', err);
+          }
+        }
+      }
+    }
+  });
 
   client.on('connect', () => {
     console.log('[MQTT] ✓ Connected to MQTT broker');
@@ -97,15 +113,30 @@ export function subscribe(topic: string, cb: (t: string, m: Uint8Array) => void)
     console.log('[MQTT] Subscribe skipped - not in browser');
     return () => {};
   }
-  const handler = (t: string, m: Buffer) => {
-    if (topicMatches(topic, t)) cb(t, m);
+  
+  // Add callback to global handlers map
+  if (!globalHandlers.has(topic)) {
+    globalHandlers.set(topic, new Set());
+    // Only subscribe to MQTT broker once per unique topic filter
+    c.subscribe(topic, (err) => {
+      if (err) console.error(`[MQTT] Subscribe error (${topic}):`, err);
+      else console.log(`[MQTT] Subscribed to: ${topic}`);
+    });
+  }
+  
+  globalHandlers.get(topic)!.add(cb);
+  
+  // Return cleanup function
+  return () => {
+    const handlers = globalHandlers.get(topic);
+    if (handlers) {
+      handlers.delete(cb);
+      if (handlers.size === 0) {
+        globalHandlers.delete(topic);
+        c.unsubscribe(topic);
+      }
+    }
   };
-  c.on('message', handler);
-  c.subscribe(topic, (err) => {
-    if (err) console.error(`[MQTT] Subscribe error (${topic}):`, err);
-    else console.log(`[MQTT] Subscribed to: ${topic}`);
-  });
-  return () => { c.off('message', handler); c.unsubscribe(topic); };
 }
 
 export function publish(topic: string, payload: string | object, retain = false) {

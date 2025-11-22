@@ -8,54 +8,10 @@ export function useInitialLoad() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const base = process.env.NEXT_PUBLIC_API_BASE;
-    // We'll still proceed even if API is not set: at the end, we can seed defaults if needed
-
-    const tryEndpoints = base ? [
-      `${base.replace(/\/$/, '')}/ui/state`,
-      `${base.replace(/\/$/, '')}/state`,
-      `${base.replace(/\/$/, '')}/status`,
-    ] : [];
-
-    const controller = new AbortController();
-
-    (async () => {
-      let loaded = false;
-      for (const url of tryEndpoints) {
-        try {
-          const res = await fetch(url, { signal: controller.signal, headers: { 'accept': 'application/json' } });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          console.log('[useInitialLoad] Initial state loaded from', url);
-          set((s: any) => {
-            // Extract rooms from API response: convert array [{name, ...}] to object {name: {...}}
-            const roomsObj: Record<string, any> = {};
-            if (Array.isArray(data.rooms)) {
-              for (const room of data.rooms) {
-                roomsObj[room.name] = { current_temp: room.current_temp, target_temp: room.target_temp, ...room };
-              }
-            }
-            return {
-              mode: data.mode ?? s.mode,
-              weather: data.weather ? { ...(s.weather || {}), ...data.weather } : s.weather,
-              rooms: mergeRooms(s.rooms, roomsObj || data.hvac || data.zones || {})
-            };
-          });
-          loaded = true;
-          break;
-        } catch (e) {
-          console.warn('[useInitialLoad] Failed', url, e);
-          continue;
-        }
-      }
-      if (!loaded) {
-        console.log('[useInitialLoad] No initial REST endpoint responded – relying on retained MQTT and persisted store');
-      }
-      // After attempts (or no API), if store is still effectively empty, seed defaults
-      set((s: any) => seedDefaultsIfEmpty(s));
-    })();
-
-    return () => controller.abort();
+    
+    // Skip REST endpoint attempts - we load everything via MQTT with retained messages
+    // Just seed defaults if store is empty
+    set((s: any) => seedDefaultsIfEmpty(s));
   }, [set]);
 }
 
