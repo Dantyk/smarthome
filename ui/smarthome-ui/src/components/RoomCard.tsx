@@ -113,7 +113,7 @@ const RoomCard: React.FC<Props> = ({ room, colors, theme, capabilities, activate
           {(!isReadonly) ? `${currentValue.toFixed(1)}°C` : '— °C'}
         </div>
         <div style={{ fontSize: 16, color: colors.textSecondary, marginTop: 8, minHeight: 24 }}>
-          {(capabilities?.humidity_sensor !== false && rm?.humidity !== undefined) ? `💧 ${rm.humidity.toFixed(0)}%` : '\u00A0'}
+          {(rm?.humidity !== undefined && capabilities?.humidity_sensor !== false) ? `💧 ${rm.humidity.toFixed(0)}%` : '\u00A0'}
         </div>
       </div>
 

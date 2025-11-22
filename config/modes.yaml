@@ -10,8 +10,8 @@ rooms:
 
 # Room groups
 groups:
-  bedroom: [bedroom, kidroom1]
-  living: [living, kitchen]
+  sleeping_area: [bedroom, kidroom1]
+  common_area: [living, kitchen]
 
 # Room capabilities (sensors and actuators availability)
 room_capabilities:
@@ -123,8 +123,8 @@ modes:
     activation:
       calendar_mode: navsteva
     room_regime:
-      bedroom: WEEKEND
-      living: WORKDAY
+      sleeping_area: WEEKEND
+      common_area: WORKDAY
 
 # Base regimes for rooms (fallback if no mode is active)
 base_regime_by_room:
