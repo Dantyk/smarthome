@@ -22,9 +22,7 @@
             "active": true
         },
         "bedroom": {
-            "active": true,
-            "value": 21,
-            "until": "2025-11-22T15:15:22.974Z"
+            "active": false
         },
         "kidroom1": {
             "active": true
