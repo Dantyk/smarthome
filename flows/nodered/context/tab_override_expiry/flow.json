@@ -13,19 +13,32 @@
             "active": false
         },
         "living": {
-            "active": true
+            "active": true,
+            "value": 21,
+            "until": "2025-11-22T17:06:13.149Z"
         },
         "kitchen": {
-            "active": true
+            "active": true,
+            "value": 21,
+            "until": "2025-11-22T17:06:13.103Z"
         },
         "bathroom": {
-            "active": true
+            "active": true,
+            "value": 21,
+            "until": "2025-11-22T17:06:13.013Z"
         },
         "bedroom": {
-            "active": false
+            "active": true,
+            "value": 21,
+            "until": "2025-11-22T17:06:13.197Z"
         },
         "kidroom1": {
-            "active": true
+            "active": true,
+            "value": 21,
+            "until": "2025-11-22T17:06:13.058Z"
+        },
+        "kupelna": {
+            "active": false
         }
     }
 }
