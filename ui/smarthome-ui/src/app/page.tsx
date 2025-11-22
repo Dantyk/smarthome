@@ -79,9 +79,12 @@ export default function Home() {
   
   // Load room capabilities from API
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const loadCapabilities = async () => {
       try {
         const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
+        console.log('[UI] Loading capabilities from:', apiBase);
         if (!apiBase) {
           console.warn('[UI] No API base configured for capabilities');
           return;
