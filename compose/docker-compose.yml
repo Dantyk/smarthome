@@ -68,15 +68,16 @@ services:
     build:
       context: ../ui/smarthome-ui
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_MQTT_BROKER: ws://192.168.1.178:9001
+        NEXT_PUBLIC_API_BASE: http://192.168.1.178:1880
+        NEXT_PUBLIC_TZ: Europe/Bratislava
+        NEXT_PUBLIC_LOCATION: Bratislava, SK
     restart: unless-stopped
     ports: ["8088:3000"]
     depends_on: [mosquitto]
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_MQTT_BROKER=ws://192.168.1.178:9001
-      - NEXT_PUBLIC_API_BASE=http://192.168.1.178:1880
-      - NEXT_PUBLIC_TZ=Europe/Bratislava
-      - NEXT_PUBLIC_LOCATION=Bratislava, SK
 volumes:
   mosquitto_data:
   baikal_data:
