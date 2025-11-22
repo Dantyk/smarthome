@@ -63,6 +63,50 @@ services:
     environment: [ "TZ=Europe/Bratislava" ]
     volumes:
       - zwave_data:/usr/src/app/store
+    profiles: [zwave]
+
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt:latest
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    devices: [ "/dev/ttyUSB0:/dev/ttyACM0" ]   # uprav podľa USB Zigbee adaptéra
+    profiles: [zigbee]
+    depends_on: [mosquitto]
+    environment:
+      - TZ=Europe/Bratislava
+    volumes:
+      - ./config/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+
+  influxdb:
+    image: influxdb:2.7-alpine
+    restart: unless-stopped
+    ports: ["8086:8086"]
+    profiles: [metrics]
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=smarthome123
+      - DOCKER_INFLUXDB_INIT_ORG=smarthome
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensors
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-changeme}
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    profiles: [metrics]
+    depends_on: [influxdb]
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=smarthome
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana_data:/var/lib/grafana
+
   ui:
     image: compose-ui
     build:
@@ -83,3 +127,5 @@ volumes:
   baikal_data:
   apprise_config:
   zwave_data:
+  influxdb_data:
+  grafana_data:

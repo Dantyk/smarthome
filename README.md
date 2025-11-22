@@ -6,12 +6,18 @@ Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teplot
 
 ### Komponenty
 
+#### Základné (vždy spustené)
 - **Node-RED** - Hlavná riadiaca logika, kalendárová synchronizácia, MQTT orchestrácia
 - **Mosquitto MQTT** - Message broker pre komunikáciu medzi komponentmi
 - **Baïkal CalDAV** - Lokálny kalendárový server pre manuálne udalosti
-- **Next.js UI** - Webové rozhranie pre ovládanie a monitoring
-- **Z-Wave JS UI** - Ovládanie Z-Wave termostatov a senzorov
-- **InfluxDB + Grafana** - Metrics a vizualizácie (voliteľné)
+- **Next.js UI** - Webové rozhranie pre ovládanie a monitoring (port 8088)
+
+#### Voliteľné (spúšťajú sa cez profily)
+- **Z-Wave JS UI** (profil: `zwave`) - Ovládanie Z-Wave termostatov a senzorov (port 8091)
+- **Zigbee2MQTT** (profil: `zigbee`) - Ovládanie Zigbee zariadení (port 8080)
+- **InfluxDB** (profil: `metrics`) - Časová databáza pre historické dáta (port 8086)
+- **Grafana** (profil: `metrics`) - Vizualizácie a grafy (port 3000)
+- **Apprise** (profil: `notify`) - Notifikačný server (port 8000)
 
 ### Dátový tok
 
@@ -43,22 +49,59 @@ Baïkal CalDAV ───┘         │
    nano .env  # Nastav porty, API kľúče, zariadenia
    ```
 
-3. **Spusti služby:**
+3. **Spusti základné služby:**
    ```bash
    docker compose up -d
    ```
 
-4. **Dokončí Baïkal setup:**
+4. **Spusti voliteľné profily** (podľa potreby):
+   
+   **Z-Wave termostaty:**
+   ```bash
+   # Najprv over USB port Z-Wave sticku
+   ls -la /dev/ttyACM*
+   # Uprav device v docker-compose.yml ak je potrebné
+   docker compose --profile zwave up -d
+   ```
+   
+   **Zigbee zariadenia:**
+   ```bash
+   # Najprv over USB port Zigbee adaptéra
+   ls -la /dev/ttyUSB*
+   # Uprav device v docker-compose.yml ak je potrebné
+   docker compose --profile zigbee up -d
+   ```
+   
+   **Metriky a vizualizácie:**
+   ```bash
+   docker compose --profile metrics up -d
+   # Grafana: http://localhost:3000 (admin/smarthome)
+   # InfluxDB: http://localhost:8086 (admin/smarthome123)
+   ```
+   
+   **Notifikácie:**
+   ```bash
+   # Nastav PUSHOVER_USER a PUSHOVER_TOKEN v .env
+   docker compose --profile notify up -d
+   ```
+
+5. **Dokončí Baïkal setup:**
    - Otvor: `http://localhost:8800/admin/`
    - Admin heslo: `admin` (alebo podľa `.env`)
    - Vytvor používateľa: `smarthome` / `smarthome`
 
-5. **Otvor Node-RED:**
+6. **Otvor Node-RED:**
    - URL: `http://localhost:1880`
    - Import flows z `/flows/nodered/flows.json`
 
-6. **Prístup k UI:**
-   - URL: `http://localhost:8088`
+7. **Prístup k webovým rozhraniám:**
+   - **SmartHome UI**: `http://localhost:8088`
+   - **Node-RED**: `http://localhost:1880`
+   - **Baïkal**: `http://localhost:8800/admin/`
+   - **Z-Wave JS UI**: `http://localhost:8091` (ak zapnutý profil `zwave`)
+   - **Zigbee2MQTT**: `http://localhost:8080` (ak zapnutý profil `zigbee`)
+   - **Grafana**: `http://localhost:3000` (ak zapnutý profil `metrics`)
+   - **InfluxDB**: `http://localhost:8086` (ak zapnutý profil `metrics`)
 
 ## ⚙️ Konfigurácia
 
@@ -199,6 +242,54 @@ bedroom:
     north: 1.5   # Severný vietor má väčší vplyv
     south: 0.3   # Južný vietor má menší vplyv
 ```
+
+## 📊 InfluxDB & Grafana (Metriky)
+
+### Automatické logovanie senzorov do InfluxDB
+
+Node-RED môže automaticky zapisovať všetky senzorové hodnoty do InfluxDB.
+
+**Príklad flow (pridaj do Node-RED):**
+
+1. **MQTT Input** → `stat/hvac/+/current_temp`
+2. **Function node** - Formátovanie pre InfluxDB:
+```javascript
+const room = msg.topic.split('/')[2];
+return {
+    payload: {
+        measurement: 'temperature',
+        fields: {
+            value: parseFloat(msg.payload)
+        },
+        tags: {
+            room: room,
+            sensor: 'hvac'
+        },
+        timestamp: new Date()
+    }
+};
+```
+3. **InfluxDB Out** node:
+   - Server: `http://influxdb:8086`
+   - Token: z `.env` súboru (`INFLUXDB_TOKEN`)
+   - Organization: `smarthome`
+   - Bucket: `sensors`
+
+### Grafana Dashboards
+
+Po zapnutí `metrics` profilu:
+
+1. Otvor Grafana: `http://localhost:3000` (admin/smarthome)
+2. **Add Data Source**:
+   - Type: InfluxDB
+   - URL: `http://influxdb:8086`
+   - Organization: `smarthome`
+   - Token: `${INFLUXDB_TOKEN}` z `.env`
+   - Default bucket: `sensors`
+3. **Import Dashboard** alebo vytvor vlastný:
+   - Teploty po miestnostiach (line chart)
+   - Vlhkosť (gauge)
+   - Weather correlation offset (area chart)
 
 ## 🔧 Údržba
 

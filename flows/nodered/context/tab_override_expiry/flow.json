@@ -7,9 +7,7 @@
             "active": false
         },
         "obyvacka": {
-            "active": true,
-            "value": 19.2,
-            "until": "2025-11-22T17:02:31.365Z"
+            "active": false
         },
         "kuchyna": {
             "active": false
