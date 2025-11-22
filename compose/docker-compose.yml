@@ -57,19 +57,22 @@ services:
   
   zwavejsui:
     image: zwavejs/zwave-js-ui:latest
-    restart: "no"  # Nereštartuj ak zariadenie neexistuje
+    restart: unless-stopped
     ports: ["${ZWAVE_PORT:-8091}:8091"]
-    devices: [ "${ZWAVE_DEVICE}:/dev/ttyACM0" ]
-    environment: [ "TZ=Europe/Bratislava" ]
+    privileged: true  # Prístup k /dev zariadeniam
+    environment:
+      - TZ=Europe/Bratislava
+      - ZWAVEJS_EXTERNAL_CONFIG=/usr/src/app/store/.config-db
     volumes:
       - zwave_data:/usr/src/app/store
+      - /dev:/dev:ro  # Read-only prístup k zariadeniam
     profiles: [zwave]
 
   zigbee2mqtt:
     image: koenkk/zigbee2mqtt:latest
-    restart: "no"  # Nereštartuj ak zariadenie neexistuje
+    restart: unless-stopped
     ports: ["${Z2M_PORT:-8090}:8080"]
-    devices: [ "${ZIGBEE_DEVICE}:/dev/ttyACM0" ]
+    privileged: true  # Prístup k /dev zariadeniam
     profiles: [zigbee]
     depends_on: [mosquitto]
     environment:
@@ -77,6 +80,7 @@ services:
     volumes:
       - ./config/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
+      - /dev:/dev:ro  # Read-only prístup k zariadeniam
 
   influxdb:
     image: influxdb:2.7-alpine

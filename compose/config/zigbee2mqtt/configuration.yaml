@@ -1,55 +1,46 @@
-# Zigbee2MQTT Configuration
-# https://www.zigbee2mqtt.io/guide/configuration/
-
-homeassistant: false
-
-# MQTT broker connection
+homeassistant:
+  enabled: false
 mqtt:
   base_topic: zigbee2mqtt
   server: mqtt://mosquitto:1883
-  user: null
-  password: null
   keepalive: 60
   reject_unauthorized: true
   version: 4
-
-# Serial port settings
 serial:
   port: /dev/ttyACM0
-  adapter: auto  # auto-detect: zstack, deconz, zigate, ezsp, etc.
   disable_led: false
-
-# Advanced settings
 advanced:
   log_level: info
   log_directory: /app/data/log/%TIMESTAMP%
   log_file: log.txt
   log_rotation: true
   log_symlink_current: true
-  
-  pan_id: GENERATE
-  network_key: GENERATE
+  pan_id: 60951
+  network_key:
+    - 32
+    - 9
+    - 12
+    - 17
+    - 185
+    - 93
+    - 67
+    - 88
+    - 181
+    - 232
+    - 131
+    - 18
+    - 133
+    - 47
+    - 32
+    - 53
   channel: 11
-  
-  homeassistant_legacy_entity_attributes: false
-  legacy_api: false
-  legacy_availability_payload: false
-  
-  # Frontend (webová UI)
   frontend:
     port: 8080
     host: 0.0.0.0
-  
-  # OTA updates
   ota_disable_automatic_update_check: false
-  ikea_ota_use_test_url: false
-
-# Device-specific options
 device_options:
-  legacy: false
   retain: true
   optimistic: true
-
-# Devices and groups will be auto-added here
 devices: {}
 groups: {}
+version: 4
