@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { subscribe, getMqtt, releaseMqtt } from '@/lib/mqtt';
 import { useHouse } from '@/store/useHouse';
-import { mqttToConfig } from '@/lib/roomMapping';
 
 export function useMqttSubscriptions() {
   const set = useHouse.setState;
@@ -20,17 +19,15 @@ export function useMqttSubscriptions() {
     
     const td = new TextDecoder();
     
-    // Subscribe to all topics (with MQTT->Config room name mapping)
+    // Subscribe to all topics
     const offA = subscribe('stat/hvac/+/current_temp', (t, m) => {
-      const mqttRoom = t.split('/')[2];
-      const room = mqttToConfig(mqttRoom);
+      const room = t.split('/')[2];
       const v = parseFloat(td.decode(m));
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], current: v }}}));
     });
     
     const offB = subscribe('virt/room/+/target_temp', (t, m) => {
-      const mqttRoom = t.split('/')[2];
-      const room = mqttToConfig(mqttRoom);
+      const room = t.split('/')[2];
       const raw = td.decode(m);
       let v: number | undefined;
       try {
@@ -44,15 +41,13 @@ export function useMqttSubscriptions() {
     });
     
     const offHum = subscribe('stat/hvac/+/humidity', (t, m) => {
-      const mqttRoom = t.split('/')[2];
-      const room = mqttToConfig(mqttRoom);
+      const room = t.split('/')[2];
       const v = parseFloat(td.decode(m));
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], humidity: v }}}));
     });
     
     const offHvac = subscribe('stat/hvac/+/enabled', (t, m) => {
-      const mqttRoom = t.split('/')[2];
-      const room = mqttToConfig(mqttRoom);
+      const room = t.split('/')[2];
       const raw = td.decode(m).toLowerCase();
       const v = raw === 'true' || raw === '1' || raw === 'on';
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], hvacEnabled: v }}}));
@@ -60,8 +55,7 @@ export function useMqttSubscriptions() {
 
     // Also accept enabled updates from virt topic (e.g., UI echo or flows)
     const offHvacVirt = subscribe('virt/room/+/enabled', (t, m) => {
-      const mqttRoom = t.split('/')[2];
-      const room = mqttToConfig(mqttRoom);
+      const room = t.split('/')[2];
       const raw = td.decode(m).toLowerCase();
       const v = raw === 'true' || raw === '1' || raw === 'on';
       set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], hvacEnabled: v }}}));

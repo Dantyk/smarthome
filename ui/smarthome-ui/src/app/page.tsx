@@ -5,7 +5,6 @@ import { useMqttSubscriptions } from '@/hooks/useMqttSubscriptions';
 import { useInitialLoad } from '@/hooks/useInitialLoad';
 import { useMqttReconnectGuard } from '@/hooks/useMqttReconnectGuard';
 import { publish } from '@/lib/mqtt';
-import { configToMqtt } from '@/lib/roomMapping';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -194,19 +193,18 @@ export default function Home() {
     }
   };
   const activateBurst = useCallback((room: string, targetTemp: number, duration: number) => {
-    const mqttRoom = configToMqtt(room);
     const until = new Date(Date.now() + duration * 60 * 60 * 1000).toISOString();
     
     // NEW: Send boost messages (duration in minutes!)
     const durationMinutes = Math.round(duration * 60);
-    publish(`virt/boost/${mqttRoom}/minutes`, String(durationMinutes), true);
-    publish(`virt/boost/${mqttRoom}/target_temp`, String(targetTemp), true);
+    publish(`virt/boost/${room}/minutes`, String(durationMinutes), true);
+    publish(`virt/boost/${room}/target_temp`, String(targetTemp), true);
     
     // LEGACY: Keep old override topics for compatibility
-    publish(`virt/room/${mqttRoom}/override_request`, { value: targetTemp, duration }, true);
-    publish(`cmd/hvac/${mqttRoom}/override_duration`, String(duration), true);
-    publish(`cmd/hvac/${mqttRoom}/setpoint`, String(targetTemp), true);
-    publish(`cmd/hvac/${mqttRoom}/override`, { active: true, value: targetTemp, duration, until }, true);
+    publish(`virt/room/${room}/override_request`, { value: targetTemp, duration }, true);
+    publish(`cmd/hvac/${room}/override_duration`, String(duration), true);
+    publish(`cmd/hvac/${room}/setpoint`, String(targetTemp), true);
+    publish(`cmd/hvac/${room}/override`, { active: true, value: targetTemp, duration, until }, true);
     
     // Optimistically update UI state
     useHouse.setState((s: any) => ({
@@ -227,16 +225,15 @@ export default function Home() {
   }, []);
   
   const cancelOverride = useCallback((room: string) => {
-    const mqttRoom = configToMqtt(room);
     // Clear boost state
-    publish(`virt/boost/${mqttRoom}/minutes`, '0', true);
-    publish(`virt/boost/${mqttRoom}/target_temp`, '0', true);
+    publish(`virt/boost/${room}/minutes`, '0', true);
+    publish(`virt/boost/${room}/target_temp`, '0', true);
     
     // Clear legacy override
-    publish(`cmd/hvac/${mqttRoom}/cancel_override`, 'true', false);
-    publish(`virt/room/${mqttRoom}/override_request`, { active: false }, true);
+    publish(`cmd/hvac/${room}/cancel_override`, 'true', false);
+    publish(`virt/room/${room}/override_request`, { active: false }, true);
     const defaultTemp = rooms[room]?.target ?? 21;
-    publish(`cmd/hvac/${mqttRoom}/setpoint`, String(defaultTemp), true);
+    publish(`cmd/hvac/${room}/setpoint`, String(defaultTemp), true);
     setSliders(prev => ({ ...prev, [room]: defaultTemp }));
     
     // Update UI state
