@@ -2762,7 +2762,7 @@
     "type": "function",
     "z": "tab_seed",
     "name": "Seen flags init",
-    "func": "flow.set('seen', flow.get('seen')||{ targets:{}, enabled:{}, weather:false, hourly:false });\nreturn null;",
+    "func": "flow.set('seen', flow.get('seen')||{ targets:{}, enabled:{}, temps:{}, humidity:{}, boost:{}, weather:false, hourly:false });\nreturn null;",
     "outputs": 1,
     "noerr": 0,
     "x": 340,
@@ -2867,7 +2867,7 @@
     "type": "function",
     "z": "tab_seed",
     "name": "mark seen weather",
-    "func": "const seen = flow.get('seen')||{ targets:{}, enabled:{}, weather:false, hourly:false };\nseen.weather=true;\nflow.set('seen', seen);\nreturn null;",
+    "func": "const seen = flow.get('seen')||{ targets:{}, enabled:{}, temps:{}, humidity:{}, boost:{}, weather:false, hourly:false };\nseen.weather=true;\nflow.set('seen', seen);\nreturn null;",
     "outputs": 1,
     "noerr": 0,
     "x": 490,
@@ -2902,11 +2902,116 @@
     "type": "function",
     "z": "tab_seed",
     "name": "mark seen hourly",
-    "func": "const seen = flow.get('seen')||{ targets:{}, enabled:{}, weather:false, hourly:false };\nseen.hourly=true;\nflow.set('seen', seen);\nreturn null;",
+    "func": "const seen = flow.get('seen')||{ targets:{}, enabled:{}, temps:{}, humidity:{}, boost:{}, weather:false, hourly:false };\nseen.hourly=true;\nflow.set('seen', seen);\nreturn null;",
     "outputs": 1,
     "noerr": 0,
     "x": 490,
     "y": 300,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "in_humidity",
+    "type": "mqtt in",
+    "z": "tab_seed",
+    "name": "stat/hvac/+/humidity (retained)",
+    "topic": "stat/hvac/+/humidity",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 1,
+    "inputs": 0,
+    "x": 220,
+    "y": 360,
+    "wires": [
+      [
+        "mark_humidity"
+      ]
+    ]
+  },
+  {
+    "id": "mark_humidity",
+    "type": "function",
+    "z": "tab_seed",
+    "name": "mark seen humidity",
+    "func": "const room = (msg.topic||'').split('/')[2];\nconst seen = flow.get('seen')||{ targets:{}, enabled:{}, temps:{}, humidity:{}, boost:{}, weather:false, hourly:false };\nseen.humidity = seen.humidity || {};\nseen.humidity[room]=true;\nflow.set('seen', seen);\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 500,
+    "y": 360,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "in_temps",
+    "type": "mqtt in",
+    "z": "tab_seed",
+    "name": "stat/hvac/+/current_temp (retained)",
+    "topic": "stat/hvac/+/current_temp",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 1,
+    "inputs": 0,
+    "x": 230,
+    "y": 420,
+    "wires": [
+      [
+        "mark_temps"
+      ]
+    ]
+  },
+  {
+    "id": "mark_temps",
+    "type": "function",
+    "z": "tab_seed",
+    "name": "mark seen temps",
+    "func": "const room = (msg.topic||'').split('/')[2];\nconst seen = flow.get('seen')||{ targets:{}, enabled:{}, temps:{}, humidity:{}, boost:{}, weather:false, hourly:false };\nseen.temps = seen.temps || {};\nseen.temps[room]=true;\nflow.set('seen', seen);\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 500,
+    "y": 420,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "in_boost",
+    "type": "mqtt in",
+    "z": "tab_seed",
+    "name": "virt/boost/+/minutes (retained)",
+    "topic": "virt/boost/+/minutes",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 1,
+    "inputs": 0,
+    "x": 220,
+    "y": 480,
+    "wires": [
+      [
+        "mark_boost"
+      ]
+    ]
+  },
+  {
+    "id": "mark_boost",
+    "type": "function",
+    "z": "tab_seed",
+    "name": "mark seen boost",
+    "func": "const room = (msg.topic||'').split('/')[2];\nconst seen = flow.get('seen')||{ targets:{}, enabled:{}, temps:{}, humidity:{}, boost:{}, weather:false, hourly:false };\nseen.boost = seen.boost || {};\nseen.boost[room]=true;\nflow.set('seen', seen);\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 490,
+    "y": 480,
     "wires": [
       []
     ]
@@ -2939,7 +3044,7 @@
     "type": "function",
     "z": "tab_seed",
     "name": "Seed defaults if missing",
-    "func": "const cfg = global.get('modesCfg');\nconst ROOMS = (cfg && Array.isArray(cfg.rooms) && cfg.rooms.length) ? cfg.rooms : [];\nconst seen=flow.get('seen')||{targets:{},enabled:{},weather:false,hourly:false};\nconst oldRooms = flow.get('last_rooms') || [];\nconst out=[];\n\n// CLEANUP: Remove topics for rooms that are NO LONGER in config\nconst removedRooms = oldRooms.filter(r => !ROOMS.includes(r));\nremovedRooms.forEach(r=>{\n    node.warn(`[seed] Cleaning up removed room: ${r}`);\n    // Delete default retained topics\n    out.push({topic:`virt/room/${r}/target_temp`, payload:'', retain:true});\n    out.push({topic:`stat/hvac/${r}/enabled`, payload:'', retain:true});\n    // Delete boost topics\n    out.push({topic:`virt/boost/${r}/minutes`, payload:'', retain:true});\n    out.push({topic:`virt/boost/${r}/target_temp`, payload:'', retain:true});\n    // Delete offset topics\n    out.push({topic:`virt/offset/${r}/value`, payload:'', retain:true});\n    // Delete override topics\n    out.push({topic:`virt/room/${r}/override`, payload:'', retain:true});\n});\n\n// SEED: Initialize default topics for NEW rooms\nROOMS.forEach(r=>{ if(!seen.targets[r]){ out.push({topic:`virt/room/${r}/target_temp`, payload:'21', retain:true}); }});\nROOMS.forEach(r=>{ if(!seen.enabled[r]){ out.push({topic:`stat/hvac/${r}/enabled`, payload:'true', retain:true}); }});\n\n// Weather (global, not per-room)\nif(!seen.weather){ out.push({topic:`virt/weather/current`, payload:JSON.stringify({ temp:20, description:'\u010diasto\u010dne obla\u010dno', icon:'02d', humidity:50, wind_speed:5, location:'Bratislava', country:'SK' }), retain:true}); }\nif(!seen.hourly){ const now=Date.now(); const hourly=Array.from({length:12}).map((_,i)=>({ dt: Math.floor((now/1000)+ (i+1)*3600), main:{temp: 20+Math.sin(i/3)*1.5}, weather:[{icon:'02d'}] })); out.push({topic:`virt/weather/hourly`, payload:JSON.stringify(hourly), retain:true}); }\n\n// Remember current rooms for next startup\nflow.set('last_rooms', ROOMS);\n\nif(removedRooms.length > 0 || out.length > 0) {\n    node.warn(`[seed] Seeding: removed=${removedRooms.length}, new=${out.length}`);\n}\n\nreturn [out];",
+    "func": "const cfg = global.get('modesCfg');\nconst ROOMS = (cfg && Array.isArray(cfg.rooms) && cfg.rooms.length) ? cfg.rooms : [];\nconst capabilities = cfg?.room_capabilities || {};\nconst seen=flow.get('seen')||{targets:{},enabled:{},temps:{},humidity:{},boost:{},weather:false,hourly:false};\nconst out=[];\n\n// DYNAMIC CLEANUP: Detect rooms that exist in MQTT but NOT in current config\n// Combine all seen room names from different topic types\nconst allSeenRooms = new Set([\n    ...Object.keys(seen.targets || {}),\n    ...Object.keys(seen.enabled || {}),\n    ...Object.keys(seen.temps || {}),\n    ...Object.keys(seen.humidity || {}),\n    ...Object.keys(seen.boost || {})\n]);\n\n// Find rooms to remove: exist in MQTT but not in current modes.yaml\nconst removedRooms = Array.from(allSeenRooms).filter(r => !ROOMS.includes(r));\n\nif(removedRooms.length > 0) {\n    node.warn(`[seed] Removing ${removedRooms.length} obsolete rooms: ${removedRooms.join(', ')}`);\n}\n\nremovedRooms.forEach(r=>{\n    node.warn(`[seed] Cleaning up removed room: ${r}`);\n    // Delete all topics for this room (empty payload with retain=true)\n    out.push({topic:`virt/room/${r}/target_temp`, payload:'', retain:true});\n    out.push({topic:`virt/room/${r}/enabled`, payload:'', retain:true});\n    out.push({topic:`virt/room/${r}/override`, payload:'', retain:true});\n    out.push({topic:`virt/room/${r}/override_request`, payload:'', retain:true});\n    out.push({topic:`stat/hvac/${r}/enabled`, payload:'', retain:true});\n    out.push({topic:`stat/hvac/${r}/current_temp`, payload:'', retain:true});\n    out.push({topic:`stat/hvac/${r}/humidity`, payload:'', retain:true});\n    out.push({topic:`virt/boost/${r}/minutes`, payload:'', retain:true});\n    out.push({topic:`virt/boost/${r}/target_temp`, payload:'', retain:true});\n    out.push({topic:`virt/offset/${r}/value`, payload:'', retain:true});\n    out.push({topic:`cmd/hvac/${r}/setpoint`, payload:'', retain:true});\n    out.push({topic:`cmd/hvac/${r}/override`, payload:'', retain:true});\n    out.push({topic:`cmd/hvac/${r}/override_duration`, payload:'', retain:true});\n    out.push({topic:`cmd/hvac/${r}/enabled`, payload:'', retain:true});\n    \n    // Clean up from seen tracking\n    if(seen.targets) delete seen.targets[r];\n    if(seen.enabled) delete seen.enabled[r];\n    if(seen.temps) delete seen.temps[r];\n    if(seen.humidity) delete seen.humidity[r];\n    if(seen.boost) delete seen.boost[r];\n});\n\n// SEED: Initialize default topics for NEW rooms from config (only if not already seen)\nlet createdCount = 0;\nROOMS.forEach(r=>{\n    const cap = capabilities[r] || {};\n    \n    // Basic topics\n    if(!seen.targets || !seen.targets[r]){\n        out.push({topic:`virt/room/${r}/target_temp`, payload:'21', retain:true});\n        createdCount++;\n    }\n    if(!seen.enabled || !seen.enabled[r]){\n        out.push({topic:`stat/hvac/${r}/enabled`, payload:'true', retain:true});\n        createdCount++;\n    }\n    \n    // Temperature sensor (always create for rooms with temp_sensor=true)\n    if(cap.temp_sensor && (!seen.temps || !seen.temps[r])){\n        out.push({topic:`stat/hvac/${r}/current_temp`, payload:'20.0', retain:true});\n        createdCount++;\n    }\n    \n    // Humidity sensor (only if humidity_sensor=true)\n    if(cap.humidity_sensor && (!seen.humidity || !seen.humidity[r])){\n        const defaultHumidity = r === 'kupelna' ? '65' : (r === 'kuchyna' ? '52' : (r === 'detska' ? '48' : '45'));\n        out.push({topic:`stat/hvac/${r}/humidity`, payload:defaultHumidity, retain:true});\n        node.warn(`[seed] Creating humidity for ${r}: ${defaultHumidity}%`);\n        createdCount++;\n    }\n    \n    // Boost topics (initialize to 0)\n    if(!seen.boost || !seen.boost[r]){\n        out.push({topic:`virt/boost/${r}/minutes`, payload:'0', retain:true});\n        out.push({topic:`virt/boost/${r}/target_temp`, payload:'0', retain:true});\n        createdCount++;\n    }\n});\n\n// Weather (global, not per-room)\nif(!seen.weather){ out.push({topic:`virt/weather/current`, payload:JSON.stringify({ temp:20, description:'\u010diasto\u010dne obla\u010dno', icon:'02d', humidity:50, wind_speed:5, location:'Bratislava', country:'SK' }), retain:true}); }\nif(!seen.hourly){ const now=Date.now(); const hourly=Array.from({length:12}).map((_,i)=>({ dt: Math.floor((now/1000)+ (i+1)*3600), main:{temp: 20+Math.sin(i/3)*1.5}, weather:[{icon:'02d'}] })); out.push({topic:`virt/weather/hourly`, payload:JSON.stringify(hourly), retain:true}); }\n\n// Update seen state\nflow.set('seen', seen);\n\nif(removedRooms.length > 0 || createdCount > 0) {\n    node.warn(`[seed] Summary: removed ${removedRooms.length} rooms, created ${createdCount} new topics`);\n}\n\nreturn [out];",
     "outputs": 1,
     "timeout": "",
     "noerr": 0,
@@ -3027,7 +3132,7 @@
     "type": "function",
     "z": "tab_override_expiry",
     "name": "Store overrides",
-    "func": "const room = (msg.topic||'').split('/')[2];\nlet data; try{ data = typeof msg.payload==='object'? msg.payload: JSON.parse(msg.payload);}catch(e){ data = msg.payload; }\n// Normalizuj na objekt\nconst ov = (data && typeof data === 'object') ? data : { active: (String(data).toLowerCase()!=='false' && data!==false) };\nconst map = flow.get('override_map') || {};\nmap[room] = ov;\nflow.set('override_map', map);\nreturn null;",
+    "func": "// Get valid rooms from config\nconst cfg = global.get('modesCfg');\nconst ROOMS = (cfg && Array.isArray(cfg.rooms)) ? cfg.rooms : [];\n\nconst room = (msg.topic||'').split('/')[2];\n\n// Skip if room is not in current config\nif (!ROOMS.includes(room)) {\n  return null; // Ignore override for non-existent rooms\n}\n\nlet data; try{ data = typeof msg.payload==='object'? msg.payload: JSON.parse(msg.payload);}catch(e){ data = msg.payload; }\n// Normalizuj na objekt\nconst ov = (data && typeof data === 'object') ? data : { active: (String(data).toLowerCase()!=='false' && data!==false) };\nconst map = flow.get('override_map') || {};\nmap[room] = ov;\nflow.set('override_map', map);\nreturn null;",
     "outputs": 0,
     "noerr": 0,
     "x": 430,
@@ -3085,7 +3190,7 @@
     "type": "function",
     "z": "tab_override_expiry",
     "name": "Check expired & clear",
-    "func": "const map = flow.get('override_map') || {};\nconst now = Date.now();\nconst out = [];\nObject.keys(map).forEach(room => {\n  const ov = map[room];\n  if (!ov || ov.active === false) return;\n  if (!ov.until) return;\n  const until = Date.parse(ov.until);\n  if (!isFinite(until)) return;\n  if (now >= until) {\n    // Expired -> publish false and cleanup cache\n    out.push({ topic: `virt/room/${room}/override`, payload: 'false', retain: true });\n    map[room] = { active: false };\n  }\n});\nflow.set('override_map', map);\nreturn [out.length ? out : null];",
+    "func": "// Get valid rooms from config\nconst cfg = global.get('modesCfg');\nconst ROOMS = (cfg && Array.isArray(cfg.rooms)) ? cfg.rooms : [];\n\nconst map = flow.get('override_map') || {};\nconst now = Date.now();\nconst out = [];\n\n// Process only rooms that exist in current config\nObject.keys(map).forEach(room => {\n  // Skip rooms not in current modes.yaml\n  if (!ROOMS.includes(room)) {\n    delete map[room]; // Clean up from cache\n    return;\n  }\n  \n  const ov = map[room];\n  if (!ov || ov.active === false) return;\n  if (!ov.until) return;\n  const until = Date.parse(ov.until);\n  if (!isFinite(until)) return;\n  if (now >= until) {\n    // Expired -> publish false and cleanup cache\n    out.push({ topic: `virt/room/${room}/override`, payload: 'false', retain: true });\n    map[room] = { active: false };\n  }\n});\nflow.set('override_map', map);\nreturn [out.length ? out : null];",
     "outputs": 1,
     "noerr": 0,
     "x": 410,

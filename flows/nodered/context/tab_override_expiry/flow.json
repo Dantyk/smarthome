@@ -4,38 +4,17 @@
             "active": false
         },
         "detska": {
-            "active": false
+            "active": true,
+            "value": 19.6,
+            "until": "2025-11-22T16:58:41.351Z"
         },
         "obyvacka": {
-            "active": false
+            "active": true,
+            "value": 24.9,
+            "until": "2025-11-22T17:01:11.352Z"
         },
         "kuchyna": {
             "active": false
-        },
-        "living": {
-            "active": true,
-            "value": 21,
-            "until": "2025-11-22T17:06:13.149Z"
-        },
-        "kitchen": {
-            "active": true,
-            "value": 21,
-            "until": "2025-11-22T17:06:13.103Z"
-        },
-        "bathroom": {
-            "active": true,
-            "value": 21,
-            "until": "2025-11-22T17:06:13.013Z"
-        },
-        "bedroom": {
-            "active": true,
-            "value": 21,
-            "until": "2025-11-22T17:06:13.197Z"
-        },
-        "kidroom1": {
-            "active": true,
-            "value": 21,
-            "until": "2025-11-22T17:06:13.058Z"
         },
         "kupelna": {
             "active": false

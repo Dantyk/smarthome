@@ -18,14 +18,49 @@
             "obyvacka": true,
             "kuchyna": true,
             "kupelna": true,
+            "living": true,
             "bedroom": true,
             "kidroom1": true,
-            "living": true,
             "kitchen": true,
             "bathroom": true
         },
         "weather": true,
-        "hourly": true
+        "hourly": true,
+        "humidity": {
+            "kupelna": true,
+            "detska": true,
+            "kuchyna": true,
+            "spalna": true,
+            "living": true,
+            "bedroom": true,
+            "kidroom1": true,
+            "kitchen": true,
+            "bathroom": true
+        },
+        "temps": {
+            "kupelna": true,
+            "detska": true,
+            "kuchyna": true,
+            "obyvacka": true,
+            "spalna": true,
+            "living": true,
+            "bedroom": true,
+            "kidroom1": true,
+            "kitchen": true,
+            "bathroom": true
+        },
+        "boost": {
+            "detska": true,
+            "obyvacka": true,
+            "kupelna": true,
+            "kuchyna": true,
+            "spalna": true,
+            "living": true,
+            "bedroom": true,
+            "kidroom1": true,
+            "kitchen": true,
+            "bathroom": true
+        }
     },
     "last_rooms": [
         "spalna",
