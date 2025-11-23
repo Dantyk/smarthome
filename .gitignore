@@ -29,3 +29,5 @@ compose/config/vdirsyncer/
 
 # Token súbory
 *.token.json
+compose/config/zigbee2mqtt/log/
+compose/config/zigbee2mqtt/*.backup*
