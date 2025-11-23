@@ -108,6 +108,9 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
       - GF_INSTALL_PLUGINS=
+      - INFLUX_ORG=${INFLUX_ORG:-Home}
+      - INFLUX_BUCKET=${INFLUX_BUCKET:-smarthome}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro

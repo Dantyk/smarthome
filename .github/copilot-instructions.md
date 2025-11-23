@@ -21,3 +21,5 @@ docker compose up -d ui
 - Open browser DevTools and confirm MQTT websocket connects to `ws://<host>:9001/`.
 
 4) When editing UI code, prefer creating small client-only components for interactive widgets to avoid SSR/CSR hydration mismatches.
+
+5) Vsetky hesla a citlive udaje sa maju nacitavat z environment premenych, nikdy nie bytovo v kode alebo konfiguracnych suboroch.
