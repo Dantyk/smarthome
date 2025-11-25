@@ -124,29 +124,53 @@ export default function Home() {
     
     const checkVersion = async () => {
       try {
-        const res = await fetch('/api/version', { cache: 'no-store' });
+        const res = await fetch('/api/version', { 
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         if (!res.ok) return;
         const data = await res.json();
         
         if (data.version !== currentVersion) {
-          console.log('[UI] New version detected:', data.version, '(current:', currentVersion + ')');
-          console.log('[UI] Reloading page to get latest version...');
-          // Clear service worker cache and reload
+          console.log('[UI] 🔄 Nová verzia detegovaná:', data.version, '(aktuálna:', currentVersion + ')');
+          console.log('[UI] Reloadujem stránku za 2 sekundy...');
+          
+          // Show visual notification
+          document.body.style.opacity = '0.7';
+          document.body.style.pointerEvents = 'none';
+          
+          // Wait 2 seconds before reload
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Clear all caches
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+          }
+          
           if ('serviceWorker' in navigator) {
             const registrations = await navigator.serviceWorker.getRegistrations();
             await Promise.all(registrations.map(reg => reg.unregister()));
           }
-          // Hard reload to bypass cache
-          window.location.reload();
+          
+          // Hard reload with cache bypass
+          window.location.href = window.location.href + '?t=' + Date.now();
         }
       } catch (err) {
         console.error('[UI] Version check failed:', err);
       }
     };
     
-    // Check every 5 minutes
-    const interval = setInterval(checkVersion, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Check every 60 seconds (1 minute)
+    const interval = setInterval(checkVersion, 60 * 1000);
+    
+    // Also check immediately after 10 seconds
+    const initialCheck = setTimeout(checkVersion, 10000);
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(initialCheck);
+    };
   }, [currentVersion]);
   
   // Sync slider state with incoming boost target temps from MQTT
