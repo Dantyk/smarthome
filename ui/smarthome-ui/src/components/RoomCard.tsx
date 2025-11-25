@@ -71,7 +71,10 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
       borderRadius: 12,
       padding: 24,
       border: `1px solid ${colors.border}`,
-      boxShadow: theme === 'dark' ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.08)'
+      boxShadow: theme === 'dark' ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.08)',
+      minHeight: 480,
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <span style={{ fontSize: 32, pointerEvents: 'none' }}>{icon}</span>
@@ -119,23 +122,25 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
         </div>
       </div>
 
-      {(!isReadonly) && (
-          <RoomControls
-            room={room}
-            sliderValue={sliderValue}
-            isReadonly={isReadonly}
-            setSliders={(updater:any) => { /* slider state kept at page level */ setSlidersHandler(updater); }}
-            activateBurst={activateBurst}
-            cancelOverride={cancelOverride}
-            colors={colors}
-          />
-      )}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+        {(!isReadonly) && (
+            <RoomControls
+              room={room}
+              sliderValue={sliderValue}
+              isReadonly={isReadonly}
+              setSliders={(updater:any) => { /* slider state kept at page level */ setSlidersHandler(updater); }}
+              activateBurst={activateBurst}
+              cancelOverride={cancelOverride}
+              colors={colors}
+            />
+        )}
 
-      {isReadonly && (
-        <div style={{ textAlign: 'center', padding: '20px 0', color: colors.textSecondary, fontSize: 14 }}>
-          ⚙️ Teplota sa nedá nastaviť
-        </div>
-      )}
+        {isReadonly && (
+          <div style={{ textAlign: 'center', padding: '20px 0', color: colors.textSecondary, fontSize: 14 }}>
+            ⚙️ Teplota sa nedá nastaviť
+          </div>
+        )}
+      </div>
     </div>
   );
 };
