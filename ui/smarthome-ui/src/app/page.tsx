@@ -36,14 +36,14 @@ export default function Home() {
   const tz = process.env.NEXT_PUBLIC_TZ || 'Europe/Bratislava';
   const locationNameEnv = process.env.NEXT_PUBLIC_LOCATION || 'Bratislava, SK';
   
-  // Use room order from API, fallback to existing room keys
+  // Use ONLY room order from API (modes.yaml), ignore MQTT-discovered rooms
   const ROOM_LIST = useMemo(() => {
     if (roomOrder.length > 0) {
-      // Filter to only show rooms that actually exist in state
-      return roomOrder.filter(r => rooms[r]);
+      return roomOrder;
     }
-    return Object.keys(rooms).sort();
-  }, [roomOrder, rooms]);
+    // Fallback: if API not loaded yet, show empty (not MQTT rooms)
+    return [];
+  }, [roomOrder]);
   const [now, setNow] = useState<string>('');
   useEffect(() => {
     const fmt = new Intl.DateTimeFormat('sk-SK', { 
