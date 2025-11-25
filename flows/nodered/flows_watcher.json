@@ -1,0 +1,52 @@
+[
+  {
+    "id": "tab_watcher",
+    "type": "tab",
+    "label": "Config Watcher",
+    "disabled": false,
+    "info": "Sleduje zmeny v modes.yaml a triggeruje reload"
+  },
+  {
+    "id": "watcher_inject",
+    "type": "inject",
+    "z": "tab_watcher",
+    "name": "Check every 30s",
+    "props": [{"p": "payload"}],
+    "repeat": "30",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "10",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 100,
+    "wires": [["watcher_check"]]
+  },
+  {
+    "id": "watcher_check",
+    "type": "function",
+    "z": "tab_watcher",
+    "name": "Check mtime",
+    "func": "// File watcher for modes.yaml - triggers reload on config change\nconst fs = require('fs');\nconst path = '/config/modes.yaml';\n\n// Store last modified time in context\nlet lastMtime = context.get('lastMtime') || null;\n\n// Check file modification time\ntry {\n    const stats = fs.statSync(path);\n    const currentMtime = stats.mtime.getTime();\n    \n    if (lastMtime === null) {\n        // First run - just store the time\n        context.set('lastMtime', currentMtime);\n        node.status({fill: 'green', shape: 'dot', text: 'watching'});\n        return null;\n    }\n    \n    if (currentMtime > lastMtime) {\n        // File was modified - trigger reload\n        context.set('lastMtime', currentMtime);\n        node.status({fill: 'yellow', shape: 'ring', text: 'change detected'});\n        node.warn(`modes.yaml changed, triggering reload (mtime: ${new Date(currentMtime).toISOString()})`);\n        return msg;\n    }\n    \n    // No change\n    node.status({fill: 'green', shape: 'dot', text: 'watching'});\n    return null;\n    \n} catch (err) {\n    node.error(`Failed to check modes.yaml: ${err.message}`);\n    node.status({fill: 'red', shape: 'ring', text: 'error'});\n    return null;\n}",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 100,
+    "wires": [["watcher_reload"]]
+  },
+  {
+    "id": "watcher_reload",
+    "type": "link out",
+    "z": "tab_watcher",
+    "name": "Trigger Loader",
+    "mode": "link",
+    "links": ["loader_schema_in"],
+    "x": 535,
+    "y": 100,
+    "wires": []
+  }
+]

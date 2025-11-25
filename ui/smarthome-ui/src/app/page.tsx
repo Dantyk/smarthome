@@ -30,6 +30,7 @@ export default function Home() {
   const [roomCapabilities, setRoomCapabilities] = useState<Record<string, RoomCapabilities>>({});
   const [roomOrder, setRoomOrder] = useState<string[]>([]);
   const [roomLabels, setRoomLabels] = useState<Record<string, string>>({});
+  const [currentVersion, setCurrentVersion] = useState<string>('');
   const { theme, toggleTheme } = useTheme();
   const colors = useMemo(() => themes[theme], [theme]);
   const router = useRouter();
@@ -75,19 +76,32 @@ export default function Home() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
   
-  // Load room capabilities, order, and labels from API
+  // Load dynamic config and room capabilities from API
+  const [apiBase, setApiBase] = useState<string>('');
+  
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    const loadCapabilities = async () => {
+    const loadConfig = async () => {
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
-        console.log('[UI] Loading capabilities from:', apiBase);
-        if (!apiBase) {
-          console.warn('[UI] No API base configured for capabilities');
-          return;
+        // First, load dynamic config (hostname-based URLs)
+        const cfgRes = await fetch('/api/config');
+        if (!cfgRes.ok) throw new Error(`Config API failed: ${cfgRes.status}`);
+        const cfg = await cfgRes.json();
+        console.log('[UI] Dynamic config loaded:', cfg);
+        setApiBase(cfg.api);
+        
+        // Get current version
+        const verRes = await fetch('/api/version');
+        if (verRes.ok) {
+          const ver = await verRes.json();
+          setCurrentVersion(ver.version);
+          console.log('[UI] Current version:', ver.version);
         }
-        const url = `${apiBase.replace(/\/$/, '')}/api/rooms/capabilities`;
+        
+        // Then load room capabilities from Node-RED
+        const url = `${cfg.api.replace(/\/$/, '')}/api/rooms/capabilities`;
+        console.log('[UI] Loading capabilities from:', url);
         const res = await fetch(url, { headers: { accept: 'application/json' } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
@@ -98,11 +112,42 @@ export default function Home() {
           console.log('[UI] Room data loaded:', json.data);
         }
       } catch (err) {
-        console.error('[UI] Failed to load room data:', err);
+        console.error('[UI] Failed to load config or room data:', err);
       }
     };
-    loadCapabilities();
+    loadConfig();
   }, []);
+  
+  // Check for new UI version periodically
+  useEffect(() => {
+    if (typeof window === 'undefined' || !currentVersion) return;
+    
+    const checkVersion = async () => {
+      try {
+        const res = await fetch('/api/version', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        if (data.version !== currentVersion) {
+          console.log('[UI] New version detected:', data.version, '(current:', currentVersion + ')');
+          console.log('[UI] Reloading page to get latest version...');
+          // Clear service worker cache and reload
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(reg => reg.unregister()));
+          }
+          // Hard reload to bypass cache
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error('[UI] Version check failed:', err);
+      }
+    };
+    
+    // Check every 5 minutes
+    const interval = setInterval(checkVersion, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [currentVersion]);
   
   // Sync slider state with incoming boost target temps from MQTT
   useEffect(() => {
@@ -160,7 +205,6 @@ export default function Home() {
     return undefined as any;
   };
   
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || '';
   const refreshState = async () => {
     if (!apiBase) {
       console.warn('[UI] No API base configured, cannot refresh');
