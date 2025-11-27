@@ -24,14 +24,15 @@ interface Props {
   setSlidersHandler: (updater: (prev: Record<string,number>) => Record<string,number>) => void;
 }
 
-// Icon rendering: map room name/label to predefined icons
-const ICON_MAP: Record<string, string> = {
-  'bedroom': '🛏️', 'spalna': '🛏️', 'spálňa': '🛏️',
-  'kidroom': '🧸', 'kidroom1': '🧸', 'detska': '🧸', 'detská': '🧸',
-  'living': '🛋️', 'obyvacka': '🛋️', 'obývačka': '🛋️',
-  'kitchen': '🍳', 'kuchyna': '🍳', 'kuchyňa': '🍳',
-  'bathroom': '🚿', 'kupelna': '🚿', 'kúpeľňa': '🚿'
-};
+// Ikona bez závislosti na názve miestnosti (bez hardcodu mien)
+function pickIcon(isReadonly: boolean, boostActive: boolean, current?: number, target?: number): string {
+  if (boostActive) return '🔥';
+  if (!isReadonly && current !== undefined && target !== undefined) {
+    if (current > target + 0.5) return '🔥';
+    if (current < target - 0.5) return '❄️';
+  }
+  return '🌡️';
+}
 
 const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilities, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
   // subscribe only to the specific room slice
@@ -48,12 +49,7 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
   const effectiveTarget = boostActive ? boostTemp : targetValue;
 
   const sliderValue = effectiveTarget;
-  const specialIcon = (boostActive ? '🔥' : (rm?.override && currentValue !== undefined && effectiveTarget !== undefined ? (currentValue > effectiveTarget + 0.5 ? '🔥' : (currentValue < effectiveTarget ? '❄️' : undefined)) : undefined));
-  
-  // Match icon by room key or display name (case-insensitive, normalized)
-  const iconKey = displayName.toLowerCase().replace(/[_-\s]/g, '');
-  const matchedIcon = ICON_MAP[room.toLowerCase()] || ICON_MAP[iconKey];
-  const icon = matchedIcon || specialIcon;
+  const icon = pickIcon(isReadonly, boostActive, currentValue, effectiveTarget);
   const remaining = rm?.overrideUntil ? new Date(rm.overrideUntil) : undefined;
 
   const renderCount = React.useRef(0);

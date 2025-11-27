@@ -9,9 +9,30 @@ export function useInitialLoad() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // Skip REST endpoint attempts - we load everything via MQTT with retained messages
-    // Just seed defaults if store is empty
-    set((s: any) => seedDefaultsIfEmpty(s));
+    bash /home/pi/smarthome/scripts/cleanup_english_topics.sh    // Načítaj zoznam miestností z Node-RED (/api/status) – bez hardcodu názvov
+    (async () => {
+      try {
+        const cfgRes = await fetch('/api/config');
+        const cfg = await cfgRes.json();
+        const apiBase: string | undefined = cfg?.api;
+        let roomsFromApi: string[] | undefined;
+        if (apiBase) {
+          const res = await fetch(`${apiBase}/api/status`, { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            roomsFromApi = Array.isArray(data?.rooms)
+              ? data.rooms
+              : Array.isArray(data?.modes?.rooms)
+                ? data.modes.rooms
+                : undefined;
+          }
+        }
+        set((s: any) => seedDefaultsIfEmpty(s, roomsFromApi));
+      } catch {
+        // Tichý fallback – bez seedovania miestností, MQTT doplní retained dáta
+        set((s: any) => seedDefaultsIfEmpty(s));
+      }
+    })();
   }, [set]);
 }
 
@@ -55,14 +76,15 @@ function coerceNum(v: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function seedDefaultsIfEmpty(state: any) {
+function seedDefaultsIfEmpty(state: any, roomsFromApi?: string[]) {
   const next = { ...state };
   const hasAnyRoom = Object.keys(state.rooms || {}).length > 0;
   const hasWeather = !!(state.weather && (state.weather.temp !== undefined || (state.weather.hourly && state.weather.hourly.length)));
   
-  // Default rooms - will be overridden by API if available
-  const DEFAULT_ROOMS = ['bedroom','kidroom1','living','kitchen','bathroom'];
-  const ROOMS = hasAnyRoom ? Object.keys(state.rooms) : DEFAULT_ROOMS;
+  // Zoznam miestností berieme z API (modes.yaml). Žiadne hardcodované názvy.
+  const ROOMS = hasAnyRoom
+    ? Object.keys(state.rooms)
+    : Array.isArray(roomsFromApi) ? roomsFromApi : [];
   
   // Seed rooms
   if (!hasAnyRoom) {
