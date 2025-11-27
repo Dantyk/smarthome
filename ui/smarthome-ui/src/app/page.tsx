@@ -116,6 +116,22 @@ export default function Home() {
       }
     };
     loadConfig();
+    
+    // Listen for config updates from MQTT
+    const handleCapabilitiesUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+      console.log('[UI] 🔄 Updating capabilities from MQTT event:', data);
+      setRoomCapabilities(data.capabilities || data);
+      setRoomOrder(data.rooms || []);
+      setRoomLabels(data.labels || {});
+    };
+    
+    window.addEventListener('capabilities-updated', handleCapabilitiesUpdate);
+    
+    return () => {
+      window.removeEventListener('capabilities-updated', handleCapabilitiesUpdate);
+    };
   }, []);
   
   // Check for new UI version periodically

@@ -260,6 +260,44 @@ export function useMqttSubscriptions() {
       }));
     });
     
+    // Subscribe to config_updated - reload capabilities when modes.yaml changes
+    const offConfigUpdate = subscribe('virt/system/config_updated', async (t, m) => {
+      try {
+        const payload = JSON.parse(td.decode(m));
+        console.log('[MQTT] 🔄 Config update received:', payload);
+        
+        // Fetch fresh config to get apiBase URL
+        const cfgRes = await fetch('/api/config');
+        if (!cfgRes.ok) {
+          console.error('[MQTT] Failed to fetch config:', cfgRes.status);
+          return;
+        }
+        const cfg = await cfgRes.json();
+        
+        // Reload capabilities from Node-RED
+        const url = `${cfg.api.replace(/\/$/, '')}/api/rooms/capabilities`;
+        console.log('[MQTT] Reloading capabilities from:', url);
+        const res = await fetch(url, { 
+          headers: { accept: 'application/json' },
+          cache: 'no-store'
+        });
+        if (!res.ok) {
+          console.error('[MQTT] Failed to reload capabilities:', res.status);
+          return;
+        }
+        const json = await res.json();
+        if (json.success && json.data) {
+          console.log('[MQTT] ✅ Capabilities reloaded, dispatching event');
+          // Trigger custom event so page.tsx can update its state
+          window.dispatchEvent(new CustomEvent('capabilities-updated', { 
+            detail: json.data 
+          }));
+        }
+      } catch (err) {
+        console.error('[MQTT] Error handling config_updated:', err);
+      }
+    });
+    
     // Cleanup function
     return () => {
       console.log('[useMqttSubscriptions] Cleaning up subscriptions');
@@ -275,6 +313,7 @@ export function useMqttSubscriptions() {
       offE();
       offBoostMinutes();
       offBoostTemp();
+      offConfigUpdate();
       releaseMqtt();
     };
   }, [set]);
