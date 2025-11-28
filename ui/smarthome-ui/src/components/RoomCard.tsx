@@ -41,6 +41,7 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
 
   // Determine if room is readonly based on capabilities (no temp_control)
   const isReadonly = capabilities ? (capabilities.temp_control === false) : (rm?.readonly === true);
+  const hasTempSensor = capabilities ? (capabilities.temp_sensor !== false) : true;
   const currentValue = rm?.current ?? 0;
   const targetValue = Number.isFinite(Number(rm?.target)) ? Number(rm?.target) : 21;
   const boostActive = rm?.boostActive ?? false;
@@ -111,7 +112,7 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
           AKTUÁLNA TEPLOTA
         </div>
         <div className="temp-current" style={{ fontSize: 40, fontWeight: 700, color: colors.currentTemp, lineHeight: 1 }}>
-          {(!isReadonly) ? `${currentValue.toFixed(1)}°C` : '— °C'}
+          {(hasTempSensor && currentValue > 0) ? `${currentValue.toFixed(1)}°C` : '— °C'}
         </div>
         <div style={{ fontSize: 16, color: colors.textSecondary, marginTop: 8, minHeight: 24 }}>
           {(rm?.humidity !== undefined && capabilities?.humidity_sensor !== false) ? `💧 ${rm.humidity.toFixed(0)}%` : '\u00A0'}

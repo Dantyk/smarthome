@@ -27,6 +27,7 @@ export default function Home() {
   const mode = useHouse(s=>s.mode) ?? '—';
   const rooms = useHouse(s=>s.rooms);
   const weather = useHouse(s=>s.weather);
+  const roomListFromStore = useHouse(s=>s.roomList) ?? [];
   const [roomCapabilities, setRoomCapabilities] = useState<Record<string, RoomCapabilities>>({});
   const [roomOrder, setRoomOrder] = useState<string[]>([]);
   const [roomLabels, setRoomLabels] = useState<Record<string, string>>({});
@@ -39,12 +40,15 @@ export default function Home() {
   
   // Use ONLY room order from API (modes.yaml), ignore MQTT-discovered rooms
   const ROOM_LIST = useMemo(() => {
+    // Priority: 1) fresh API data, 2) store roomList, 3) empty
     if (roomOrder.length > 0) {
       return roomOrder;
     }
-    // Fallback: if API not loaded yet, show empty (not MQTT rooms)
+    if (roomListFromStore.length > 0) {
+      return roomListFromStore;
+    }
     return [];
-  }, [roomOrder]);
+  }, [roomOrder, roomListFromStore]);
   const [now, setNow] = useState<string>('');
   useEffect(() => {
     const fmt = new Intl.DateTimeFormat('sk-SK', { 
@@ -107,8 +111,15 @@ export default function Home() {
         const json = await res.json();
         if (json.success && json.data) {
           setRoomCapabilities(json.data.capabilities || json.data);
-          setRoomOrder(json.data.rooms || []);
+          const newRoomOrder = json.data.rooms || [];
+          setRoomOrder(newRoomOrder);
           setRoomLabels(json.data.labels || {});
+          
+          // Update store with new room order
+          if (newRoomOrder.length > 0) {
+            useHouse.setState({ roomList: newRoomOrder });
+          }
+          
           console.log('[UI] Room data loaded:', json.data);
         }
       } catch (err) {
@@ -121,10 +132,16 @@ export default function Home() {
     const handleCapabilitiesUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       const data = customEvent.detail;
-      console.log('[UI] 🔄 Updating capabilities from MQTT event:', data);
+      console.log('[MQTT] 🔄 Updating capabilities from MQTT event:', data);
       setRoomCapabilities(data.capabilities || data);
-      setRoomOrder(data.rooms || []);
+      const newRoomOrder = data.rooms || [];
+      setRoomOrder(newRoomOrder);
       setRoomLabels(data.labels || {});
+      
+      // Update store with new room order
+      if (newRoomOrder.length > 0) {
+        useHouse.setState({ roomList: newRoomOrder });
+      }
     };
     
     window.addEventListener('capabilities-updated', handleCapabilitiesUpdate);

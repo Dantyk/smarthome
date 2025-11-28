@@ -1042,7 +1042,7 @@
     "type": "function",
     "z": "tab_alerts",
     "name": "Emergency Actions",
-    "func": "const alert = msg.payload;\nconst messages = [];\n\n// Pushover emergency (priority=2, retry, expire)\nif (alert.actions.includes('pushover_emergency')) {\n    messages.push({\n        topic: 'apprise/notify',\n        payload: {\n            urls: 'pover://${PUSHOVER_USER}@${PUSHOVER_TOKEN}',\n            title: 'EMERGENCY',\n            body: alert.message,\n            priority: 2,\n            retry: 30,\n            expire: 3600\n        }\n    });\n}\n\n// SMS via Gammu\nif (alert.actions.includes('sms')) {\n    const mobil = global.get('modes')?.settings?.mobil || '+421903789694';\n    messages.push({\n        topic: 'sms/send',\n        payload: {\n            number: mobil,\n            text: alert.message\n        }\n    });\n}\n\n// Siren control\nif (alert.actions.includes('siren')) {\n    messages.push({\n        topic: 'cmd/siren/main/state',\n        payload: 'ON'\n    });\n}\n\nnode.warn(`[alerts] Emergency: ${alert.message}`);\n\nreturn [messages];",
+    "func": "const alert = msg.payload;\nconst messages = [];\n\nconst user = env.get('PUSHOVER_USER');\nconst token = env.get('PUSHOVER_TOKEN');\n\n// Pushover emergency (priority=2, retry, expire)\nif (alert.actions.includes('pushover_emergency')) {\n    messages.push({\n        topic: 'apprise/notify',\n        payload: {\n            urls: `pover://${user}@${token}`,\n            title: 'EMERGENCY',\n            body: alert.message,\n            priority: 2,\n            retry: 30,\n            expire: 3600\n        }\n    });\n}\n\n// SMS via Gammu\nif (alert.actions.includes('sms')) {\n    const mobil = global.get('modes')?.settings?.mobil || '+421903789694';\n    messages.push({\n        topic: 'sms/send',\n        payload: {\n            number: mobil,\n            text: alert.message\n        }\n    });\n}\n\n// Siren control\nif (alert.actions.includes('siren')) {\n    messages.push({\n        topic: 'cmd/siren/main/state',\n        payload: 'ON'\n    });\n}\n\nnode.warn(`[alerts] Emergency: ${alert.message}`);\n\nreturn [messages];",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -1061,7 +1061,7 @@
     "type": "function",
     "z": "tab_alerts",
     "name": "Warning Actions",
-    "func": "const alert = msg.payload;\nconst messages = [];\n\n// Standard Pushover notification\nif (alert.actions.includes('pushover')) {\n    messages.push({\n        topic: 'apprise/notify',\n        payload: {\n            urls: 'pover://${PUSHOVER_USER}@${PUSHOVER_TOKEN}',\n            title: 'Warning',\n            body: alert.message,\n            priority: 1\n        }\n    });\n}\n\nnode.warn(`[alerts] Warning: ${alert.message}`);\n\nreturn [messages];",
+    "func": "const alert = msg.payload;\nconst messages = [];\n\nconst user = env.get('PUSHOVER_USER');\nconst token = env.get('PUSHOVER_TOKEN');\n\n// Standard Pushover notification\nif (alert.actions.includes('pushover')) {\n    messages.push({\n        topic: 'apprise/notify',\n        payload: {\n            urls: `pover://${user}@${token}`,\n            title: 'Warning',\n            body: alert.message,\n            priority: 1\n        }\n    });\n}\n\nnode.warn(`[alerts] Warning: ${alert.message}`);\n\nreturn [messages];",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -1496,7 +1496,7 @@
     "type": "function",
     "z": "tab_api",
     "name": "Status Handler",
-    "func": "const modes = global.get('modes') || {};\nconst modesCfg = global.get('modesCfg') || {};\nconst calendarEvents = global.get('calendarEvents') || [];\nconst alertHistory = global.get('alertHistory') || [];\nconst rooms = (modesCfg.rooms || modes.rooms || []).sort();\nconst roomStatus = [];\n\nrooms.forEach(room => {\n    const currentTemp = flow.get(`room_${room}_current_temp`) || null;\n    const targetTemp = flow.get(`room_${room}_target_temp`) || null;\n    const heating = flow.get(`room_${room}_heating`) || false;\n    const boost = flow.get(`boost_${room}_active`) || false;\n    \n    roomStatus.push({\n        name: room,\n        current_temp: currentTemp,\n        target_temp: targetTemp,\n        heating: heating,\n        boost: boost\n    });\n});\n\nmsg.payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    rooms: roomStatus,\n    mode: {\n        current: flow.get('current_mode') || 'work',\n        overrides: flow.get('current_overrides') || []\n    },\n    calendar: {\n        active_events: calendarEvents.filter(e => e.active).length,\n        total_events: calendarEvents.length\n    },\n    alerts: {\n        total: alertHistory.length,\n        unacknowledged: alertHistory.filter(a => !a.acknowledged).length\n    },\n    services: {\n        nodered: true,\n        mosquitto: flow.get('service_mosquitto_online') || false,\n        baikal: flow.get('service_baikal_online') || false\n    }\n};\n\nreturn msg;",
+    "func": "const modes = global.get('modes') || {};\nconst modesCfg = global.get('modesCfg') || {};\nconst calendarEvents = global.get('calendarEvents') || [];\nconst alertHistory = global.get('alertHistory') || [];\nconst rooms = modesCfg.rooms || modes.rooms || [];\nconst roomStatus = [];\n\nrooms.forEach(room => {\n    const currentTemp = flow.get(`room_${room}_current_temp`) || null;\n    const targetTemp = flow.get(`room_${room}_target_temp`) || null;\n    const heating = flow.get(`room_${room}_heating`) || false;\n    const boost = flow.get(`boost_${room}_active`) || false;\n    \n    roomStatus.push({\n        name: room,\n        current_temp: currentTemp,\n        target_temp: targetTemp,\n        heating: heating,\n        boost: boost\n    });\n});\n\nmsg.payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    rooms: roomStatus,\n    mode: {\n        current: flow.get('current_mode') || 'work',\n        overrides: flow.get('current_overrides') || []\n    },\n    calendar: {\n        active_events: calendarEvents.filter(e => e.active).length,\n        total_events: calendarEvents.length\n    },\n    alerts: {\n        total: alertHistory.length,\n        unacknowledged: alertHistory.filter(a => !a.acknowledged).length\n    },\n    services: {\n        nodered: true,\n        mosquitto: flow.get('service_mosquitto_online') || false,\n        baikal: flow.get('service_baikal_online') || false\n    }\n};\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -4169,5 +4169,107 @@
         "format_humidity"
       ]
     ]
+  },
+  {
+    "id": "tab_watcher",
+    "type": "tab",
+    "label": "Config Watcher",
+    "disabled": false,
+    "info": "Sleduje zmeny v modes.yaml a triggeruje reload"
+  },
+  {
+    "id": "watcher_inject",
+    "type": "inject",
+    "z": "tab_watcher",
+    "name": "Check every 30s",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "10",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 100,
+    "wires": [
+      [
+        "watcher_check"
+      ]
+    ]
+  },
+  {
+    "id": "watcher_check",
+    "type": "function",
+    "z": "tab_watcher",
+    "name": "Check mtime",
+    "func": "// File watcher for modes.yaml - triggers reload on config change\nconst fs = require('fs');\nconst path = '/config/modes.yaml';\n\n// Store last modified time in context\nlet lastMtime = context.get('lastMtime') || null;\n\n// Check file modification time\ntry {\n    const stats = fs.statSync(path);\n    const currentMtime = stats.mtime.getTime();\n    \n    if (lastMtime === null) {\n        // First run - just store the time\n        context.set('lastMtime', currentMtime);\n        node.status({fill: 'green', shape: 'dot', text: 'watching'});\n        return null;\n    }\n    \n    if (currentMtime > lastMtime) {\n        // File was modified - trigger reload\n        context.set('lastMtime', currentMtime);\n        node.status({fill: 'yellow', shape: 'ring', text: 'change detected'});\n        node.warn(`modes.yaml changed, triggering reload (mtime: ${new Date(currentMtime).toISOString()})`);\n        return msg;\n    }\n    \n    // No change\n    node.status({fill: 'green', shape: 'dot', text: 'watching'});\n    return null;\n    \n} catch (err) {\n    node.error(`Failed to check modes.yaml: ${err.message}`);\n    node.status({fill: 'red', shape: 'ring', text: 'error'});\n    return null;\n}",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 100,
+    "wires": [
+      [
+        "watcher_reload",
+        "watcher_mqtt_notify"
+      ]
+    ]
+  },
+  {
+    "id": "watcher_reload",
+    "type": "link out",
+    "z": "tab_watcher",
+    "name": "Trigger Loader",
+    "mode": "link",
+    "links": [
+      "loader_schema_in"
+    ],
+    "x": 535,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "watcher_mqtt_notify",
+    "type": "function",
+    "z": "tab_watcher",
+    "name": "Prepare MQTT Event",
+    "func": "// Publish config_updated event to notify UI\nmsg.topic = 'virt/system/config_updated';\nmsg.payload = JSON.stringify({\n    timestamp: new Date().toISOString(),\n    source: 'modes.yaml',\n    action: 'reload'\n});\nmsg.retain = false;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 160,
+    "wires": [
+      [
+        "watcher_mqtt_out"
+      ]
+    ]
+  },
+  {
+    "id": "watcher_mqtt_out",
+    "type": "mqtt out",
+    "z": "tab_watcher",
+    "name": "Publish config_updated",
+    "topic": "",
+    "qos": "0",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt_broker",
+    "x": 590,
+    "y": 160,
+    "wires": []
   }
 ]

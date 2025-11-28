@@ -46,7 +46,7 @@ room_capabilities:
   kupelna:
     temp_sensor: true
     humidity_sensor: true
-    hvac_control: false      # Bez HVAC switch
+    hvac_control: true      # Bez HVAC switch
     temp_control: false      # Bez možnosti nastaviť cieľ
 
 # Teplotné limity

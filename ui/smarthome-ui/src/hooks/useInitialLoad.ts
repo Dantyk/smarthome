@@ -9,7 +9,7 @@ export function useInitialLoad() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    bash /home/pi/smarthome/scripts/cleanup_english_topics.sh    // Načítaj zoznam miestností z Node-RED (/api/status) – bez hardcodu názvov
+    // Načítaj zoznam miestností z Node-RED (/api/status) – bez hardcodu názvov
     (async () => {
       try {
         const cfgRes = await fetch('/api/config');
@@ -20,11 +20,12 @@ export function useInitialLoad() {
           const res = await fetch(`${apiBase}/api/status`, { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
-            roomsFromApi = Array.isArray(data?.rooms)
-              ? data.rooms
-              : Array.isArray(data?.modes?.rooms)
-                ? data.modes.rooms
-                : undefined;
+            // Extract room names from API response (handle both array of strings and array of objects)
+            if (Array.isArray(data?.rooms)) {
+              roomsFromApi = data.rooms.map((r: any) => typeof r === 'string' ? r : r.name);
+            } else if (Array.isArray(data?.modes?.rooms)) {
+              roomsFromApi = data.modes.rooms.map((r: any) => typeof r === 'string' ? r : r.name);
+            }
           }
         }
         set((s: any) => seedDefaultsIfEmpty(s, roomsFromApi));
@@ -82,12 +83,20 @@ function seedDefaultsIfEmpty(state: any, roomsFromApi?: string[]) {
   const hasWeather = !!(state.weather && (state.weather.temp !== undefined || (state.weather.hourly && state.weather.hourly.length)));
   
   // Zoznam miestností berieme z API (modes.yaml). Žiadne hardcodované názvy.
-  const ROOMS = hasAnyRoom
-    ? Object.keys(state.rooms)
-    : Array.isArray(roomsFromApi) ? roomsFromApi : [];
+  // Použijeme roomList zo store (zachováva poradie) alebo roomsFromApi
+  const ROOMS = Array.isArray(roomsFromApi) && roomsFromApi.length > 0
+    ? roomsFromApi
+    : (Array.isArray(state.roomList) && state.roomList.length > 0)
+      ? state.roomList
+      : [];
+  
+  // Uložíme poradie miestností do store
+  if (Array.isArray(roomsFromApi) && roomsFromApi.length > 0) {
+    next.roomList = roomsFromApi;
+  }
   
   // Seed rooms
-  if (!hasAnyRoom) {
+  if (!hasAnyRoom && ROOMS.length > 0) {
     next.rooms = {};
     for (const r of ROOMS) {
       next.rooms[r] = {
