@@ -16,6 +16,14 @@ room_labels:
   kuchyna: "Kuchyňa"
   kupelna: "Kúpeľňa"
 
+# Ikony miestností
+room_icons:
+  spalna: "🛏️"
+  detska: "🧸"
+  obyvacka: "🛋️"
+  kuchyna: "🍳"
+  kupelna: "🚿"
+
 # Skupiny miestností
 groups:
   nocna_zona: [spalna, detska]
@@ -46,7 +54,7 @@ room_capabilities:
   kupelna:
     temp_sensor: true
     humidity_sensor: true
-    hvac_control: true      # Bez HVAC switch
+    hvac_control: false      # Bez HVAC switch
     temp_control: false      # Bez možnosti nastaviť cieľ
 
 # Teplotné limity

@@ -885,7 +885,7 @@
     "type": "function",
     "z": "tab_planner",
     "name": "Publish Target Temps",
-    "func": "const room = msg.payload.room;\nconst edges = msg.payload.correlatedEdges || [];\n\n// CHECK BOOST OVERRIDE FIRST\nconst boostActive = global.get(`boost_${room}_active`) || false;\nconst boostTemp = global.get(`boost_${room}_target_temp`);\n\nif (boostActive && boostTemp) {\n    // Boost is active - publish ONLY boost temperature\n    node.warn(`[planner] ${room}: BOOST ACTIVE, publishing ${boostTemp}°C (ignoring edges)`);\n    \n    return [[\n        {\n            topic: `virt/room/${room}/target_temp`,\n            payload: boostTemp,\n            retain: true\n        },\n        {\n            topic: `cmd/hvac/${room}/setpoint`,\n            payload: boostTemp,\n            retain: false\n        }\n    ]];\n}\n\n// No boost - proceed with normal edge-based schedule\nif (edges.length === 0) {\n    return null;\n}\n\nconst messages = [];\n\nedges.forEach(edge => {\n    messages.push({\n        topic: `virt/room/${room}/target_temp`,\n        payload: {\n            room: room,\n            at: edge.at,\n            value: edge.value,\n            originalValue: edge.originalValue,\n            delta: edge.delta,\n            timestamp: new Date().toISOString()\n        },\n        retain: true\n    });\n    \n    // Also publish to cmd/hvac for actual control\n    messages.push({\n        topic: `cmd/hvac/${room}/setpoint`,\n        payload: edge.value,\n        retain: false\n    });\n});\n\nnode.warn(`[planner] ${room}: Published ${edges.length} target temps`);\n\nreturn [messages];",
+    "func": "const room = msg.payload.room;\nconst edges = msg.payload.correlatedEdges || [];\n\n// Get scheduled temperature from edges (ignore boost)\n// Use originalValue (without weather) for badge comparison\nlet scheduledTemp = null;\nlet scheduledTempAdjusted = null;\n\nif (edges.length > 0) {\n    // Use originalValue (no weather) for boost comparison\n    scheduledTemp = edges[0].originalValue !== undefined ? edges[0].originalValue : edges[0].value;\n    // Adjusted value (with weather) for actual target\n    scheduledTempAdjusted = edges[0].value;\n    \n    // Store for future use\n    flow.set(`${room}_last_scheduled_temp`, scheduledTemp);\n    flow.set(`${room}_last_scheduled_temp_adjusted`, scheduledTempAdjusted);\n} else {\n    // No edges - try to get last known scheduled temp\n    scheduledTemp = flow.get(`${room}_last_scheduled_temp`);\n    scheduledTempAdjusted = flow.get(`${room}_last_scheduled_temp_adjusted`);\n}\n\n// CHECK BOOST OVERRIDE\nconst boostActive = global.get(`boost_${room}_active`) || false;\nconst boostTemp = global.get(`boost_${room}_target_temp`);\n\nconst messages = [];\n\n// ALWAYS publish scheduled temp (WITHOUT weather - for badge comparison)\nif (scheduledTemp !== null && scheduledTemp !== undefined) {\n    messages.push({\n        topic: `virt/room/${room}/scheduled_temp`,\n        payload: scheduledTemp,\n        retain: true\n    });\n}\n\nif (boostActive && boostTemp) {\n    // Boost is active - publish boost as target_temp\n    node.warn(`[planner] ${room}: BOOST ACTIVE, target=${boostTemp}°C, scheduled=${scheduledTemp}°C (base), adjusted=${scheduledTempAdjusted}°C (w/weather)`);\n    \n    messages.push({\n        topic: `virt/room/${room}/target_temp`,\n        payload: boostTemp,\n        retain: true\n    });\n    \n    messages.push({\n        topic: `cmd/hvac/${room}/setpoint`,\n        payload: boostTemp,\n        retain: false\n    });\n    \n    return [messages];\n}\n\n// No boost - publish scheduled temp as target_temp\nif (edges.length === 0) {\n    // Use adjusted value (with weather) as target\n    const targetTemp = scheduledTempAdjusted !== null && scheduledTempAdjusted !== undefined \n                       ? scheduledTempAdjusted \n                       : scheduledTemp;\n    \n    if (targetTemp !== null && targetTemp !== undefined) {\n        node.warn(`[planner] ${room}: No edges, using last scheduled ${scheduledTemp}°C (base), ${scheduledTempAdjusted}°C (adjusted)`);\n        \n        messages.push({\n            topic: `virt/room/${room}/target_temp`,\n            payload: targetTemp,\n            retain: true\n        });\n        \n        messages.push({\n            topic: `cmd/hvac/${room}/setpoint`,\n            payload: targetTemp,\n            retain: false\n        });\n    } else {\n        node.warn(`[planner] ${room}: No edges and no last scheduled temp`);\n    }\n    \n    return [messages];\n}\n\n// Normal flow - publish edges\nedges.forEach(edge => {\n    messages.push({\n        topic: `virt/room/${room}/target_temp`,\n        payload: {\n            room: room,\n            at: edge.at,\n            value: edge.value,\n            originalValue: edge.originalValue,\n            delta: edge.delta,\n            timestamp: new Date().toISOString()\n        },\n        retain: true\n    });\n    \n    messages.push({\n        topic: `cmd/hvac/${room}/setpoint`,\n        payload: edge.value,\n        retain: false\n    });\n});\n\nnode.warn(`[planner] ${room}: Published ${edges.length} target temps, scheduled=${scheduledTemp}°C (base)`);\n\nreturn [messages];",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -1909,7 +1909,7 @@
     "type": "function",
     "z": "tab_api",
     "name": "Rooms Capabilities Handler",
-    "func": "const cfg = global.get('modesCfg');\n\nif (!cfg) {\n    msg.statusCode = 503;\n    msg.payload = {\n        success: false,\n        error: 'Configuration not loaded'\n    };\n    return msg;\n}\n\nconst capabilities = cfg.room_capabilities || {};\nconst rooms = cfg.rooms || [];\nconst labels = cfg.room_labels || {};\n\nmsg.payload = {\n    success: true,\n    data: {\n        capabilities: capabilities,\n        rooms: rooms,\n        labels: labels\n    },\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+    "func": "const cfg = global.get('modesCfg');\n\nif (!cfg) {\n    msg.statusCode = 503;\n    msg.payload = {\n        success: false,\n        error: 'Configuration not loaded'\n    };\n    return msg;\n}\n\nconst capabilities = cfg.room_capabilities || {};\nconst rooms = cfg.rooms || [];\nconst labels = cfg.room_labels || {};\nconst icons = cfg.room_icons || {};\n\nmsg.payload = {\n    success: true,\n    data: {\n        capabilities: capabilities,\n        rooms: rooms,\n        labels: labels,\n        icons: icons\n    },\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -4198,22 +4198,44 @@
     "y": 100,
     "wires": [
       [
-        "watcher_check"
+        "watcher_check_exec"
       ]
+    ]
+  },
+  {
+    "id": "watcher_check_exec",
+    "type": "exec",
+    "z": "tab_watcher",
+    "command": "stat -c %Y /config/modes.yaml",
+    "addpay": "",
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "name": "Get mtime",
+    "x": 340,
+    "y": 100,
+    "wires": [
+      [
+        "watcher_check"
+      ],
+      [],
+      []
     ]
   },
   {
     "id": "watcher_check",
     "type": "function",
     "z": "tab_watcher",
-    "name": "Check mtime",
-    "func": "// File watcher for modes.yaml - triggers reload on config change\nconst fs = require('fs');\nconst path = '/config/modes.yaml';\n\n// Store last modified time in context\nlet lastMtime = context.get('lastMtime') || null;\n\n// Check file modification time\ntry {\n    const stats = fs.statSync(path);\n    const currentMtime = stats.mtime.getTime();\n    \n    if (lastMtime === null) {\n        // First run - just store the time\n        context.set('lastMtime', currentMtime);\n        node.status({fill: 'green', shape: 'dot', text: 'watching'});\n        return null;\n    }\n    \n    if (currentMtime > lastMtime) {\n        // File was modified - trigger reload\n        context.set('lastMtime', currentMtime);\n        node.status({fill: 'yellow', shape: 'ring', text: 'change detected'});\n        node.warn(`modes.yaml changed, triggering reload (mtime: ${new Date(currentMtime).toISOString()})`);\n        return msg;\n    }\n    \n    // No change\n    node.status({fill: 'green', shape: 'dot', text: 'watching'});\n    return null;\n    \n} catch (err) {\n    node.error(`Failed to check modes.yaml: ${err.message}`);\n    node.status({fill: 'red', shape: 'ring', text: 'error'});\n    return null;\n}",
+    "name": "Compare mtime",
+    "func": "// Compare file modification time\nconst currentMtime = parseInt(msg.payload.trim());\nlet lastMtime = context.get('lastMtime') || null;\n\nif (lastMtime === null) {\n    // First run - just store the time\n    context.set('lastMtime', currentMtime);\n    node.status({fill: 'green', shape: 'dot', text: 'watching'});\n    return null;\n}\n\nif (currentMtime > lastMtime) {\n    // File was modified - trigger reload\n    context.set('lastMtime', currentMtime);\n    node.status({fill: 'yellow', shape: 'ring', text: 'change detected'});\n    node.warn(`modes.yaml changed, triggering reload (mtime: ${new Date(currentMtime * 1000).toISOString()})`);\n    return msg;\n}\n\n// No change\nnode.status({fill: 'green', shape: 'dot', text: 'watching'});\nreturn null;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
-    "x": 340,
+    "x": 540,
     "y": 100,
     "wires": [
       [

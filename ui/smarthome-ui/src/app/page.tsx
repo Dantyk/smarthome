@@ -31,6 +31,7 @@ export default function Home() {
   const [roomCapabilities, setRoomCapabilities] = useState<Record<string, RoomCapabilities>>({});
   const [roomOrder, setRoomOrder] = useState<string[]>([]);
   const [roomLabels, setRoomLabels] = useState<Record<string, string>>({});
+  const [roomIcons, setRoomIcons] = useState<Record<string, string>>({});
   const [currentVersion, setCurrentVersion] = useState<string>('');
   const { theme, toggleTheme } = useTheme();
   const colors = useMemo(() => themes[theme], [theme]);
@@ -114,6 +115,7 @@ export default function Home() {
           const newRoomOrder = json.data.rooms || [];
           setRoomOrder(newRoomOrder);
           setRoomLabels(json.data.labels || {});
+          setRoomIcons(json.data.icons || {});
           
           // Update store with new room order
           if (newRoomOrder.length > 0) {
@@ -137,6 +139,7 @@ export default function Home() {
       const newRoomOrder = data.rooms || [];
       setRoomOrder(newRoomOrder);
       setRoomLabels(data.labels || {});
+      setRoomIcons(data.icons || {});
       
       // Update store with new room order
       if (newRoomOrder.length > 0) {
@@ -206,15 +209,30 @@ export default function Home() {
     };
   }, [currentVersion]);
   
-  // Sync slider state with incoming boost target temps from MQTT
+  // Sync slider state with incoming target temps from MQTT
   useEffect(() => {
     ROOM_LIST.forEach(room => {
       const rm = rooms[room];
+      
+      // Update slider based on current state
+      let targetTemp: number | undefined;
+      
       if (rm?.boostActive && rm.boostTargetTemp !== undefined && !isNaN(rm.boostTargetTemp)) {
+        // Boost is active - ONLY use boost temperature (ignore rm.target which gets updated by MQTT)
+        targetTemp = rm.boostTargetTemp;
+      } else if (rm?.scheduledTemp !== undefined && !isNaN(rm.scheduledTemp)) {
+        // No boost - prefer scheduledTemp (baseline from planner)
+        targetTemp = rm.scheduledTemp;
+      } else if (rm?.target !== undefined && !isNaN(rm.target)) {
+        // Fallback - use target if scheduledTemp not available yet
+        targetTemp = rm.target;
+      }
+      
+      if (targetTemp !== undefined) {
         setSliders(prev => {
           // Only update if different to avoid infinite loops
-          if (prev[room] !== rm.boostTargetTemp) {
-            return { ...prev, [room]: rm.boostTargetTemp };
+          if (prev[room] !== targetTemp) {
+            return { ...prev, [room]: targetTemp };
           }
           return prev;
         });
@@ -333,11 +351,11 @@ export default function Home() {
     // Clear legacy override
     publish(`cmd/hvac/${room}/cancel_override`, 'true', false);
     publish(`virt/room/${room}/override_request`, { active: false }, true);
-    const defaultTemp = rooms[room]?.target ?? 21;
-    publish(`cmd/hvac/${room}/setpoint`, String(defaultTemp), true);
-    setSliders(prev => ({ ...prev, [room]: defaultTemp }));
     
-    // Update UI state
+    // DON'T send setpoint - let Node-RED resolver recalculate from schedule
+    // (rooms[room].target is already the boost value, not the original scheduled value)
+    
+    // Update UI state optimistically
     useHouse.setState((s: any) => ({
       rooms: {
         ...s.rooms,
@@ -352,8 +370,10 @@ export default function Home() {
         }
       }
     }));
-    console.log(`[UI] Override and boost cancelled for ${room}`);
-  }, [setSliders, rooms]);
+    
+    // Slider will update from MQTT when Node-RED publishes the new scheduled target
+    console.log(`[UI] Override and boost cancelled for ${room}, waiting for scheduled target from Node-RED`);
+  }, []);
   
   const toggleHvac = useCallback((room: string, enabled: boolean) => {
     // Optimistic UI update so the switch flips immediately
@@ -479,6 +499,7 @@ export default function Home() {
             <RoomCard
               room={r}
               roomLabel={roomLabels[r] || r}
+              roomIcon={roomIcons[r]}
               colors={colors}
               theme={theme}
               capabilities={roomCapabilities[r]}

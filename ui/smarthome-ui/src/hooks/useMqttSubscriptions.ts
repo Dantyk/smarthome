@@ -37,7 +37,18 @@ export function useMqttSubscriptions() {
         v = parseFloat(raw);
       }
       v = Number.isFinite(v) ? v : undefined;
-      set((s: any) => ({ rooms: { ...s.rooms, [room]: { ...s.rooms[room], target: v }}}));
+      
+      // Update target ONLY if boost is not active (to prevent boost countdown from overwriting target)
+      set((s: any) => {
+        const currentBoostActive = s.rooms?.[room]?.boostActive;
+        if (currentBoostActive) {
+          // Boost is active - ignore target_temp updates (they are boost values)
+          console.log(`[UI] Ignoring target_temp update for ${room} (boost active): ${v}°C`);
+          return s;
+        }
+        // No boost - update target normally
+        return { rooms: { ...s.rooms, [room]: { ...s.rooms[room], target: v }}};
+      });
     });
     
     const offHum = subscribe('stat/hvac/+/humidity', (t, m) => {
@@ -260,6 +271,22 @@ export function useMqttSubscriptions() {
       }));
     });
     
+    // Subscribe to scheduled temp (virt/room/+/scheduled_temp) - baseline without boost
+    const offScheduledTemp = subscribe('virt/room/+/scheduled_temp', (t, m) => {
+      const room = t.split('/')[2];
+      const temp = parseFloat(td.decode(m));
+      console.log(`[UI] Scheduled temp for ${room}:`, temp);
+      set((s: any) => ({ 
+        rooms: { 
+          ...s.rooms, 
+          [room]: { 
+            ...s.rooms[room], 
+            scheduledTemp: temp
+          }
+        }
+      }));
+    });
+    
     // Subscribe to config_updated - reload capabilities when modes.yaml changes
     const offConfigUpdate = subscribe('virt/system/config_updated', async (t, m) => {
       try {
@@ -313,6 +340,7 @@ export function useMqttSubscriptions() {
       offE();
       offBoostMinutes();
       offBoostTemp();
+      offScheduledTemp();
       offConfigUpdate();
       releaseMqtt();
     };

@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 type RoomState = { 
   current?: number; 
   target?: number; 
+  scheduledTemp?: number; // Baseline scheduled temperature (ignores boost)
   humidity?: number;
   override?: boolean;
   overrideValue?: number;

@@ -15,6 +15,7 @@ interface RoomCapabilities {
 interface Props {
   room: string;
   roomLabel?: string;
+  roomIcon?: string;
   colors: any;
   theme: string;
   capabilities?: RoomCapabilities;
@@ -24,17 +25,15 @@ interface Props {
   setSlidersHandler: (updater: (prev: Record<string,number>) => Record<string,number>) => void;
 }
 
-// Ikona bez závislosti na názve miestnosti (bez hardcodu mien)
-function pickIcon(isReadonly: boolean, boostActive: boolean, current?: number, target?: number): string {
-  if (boostActive) return '🔥';
-  if (!isReadonly && current !== undefined && target !== undefined) {
-    if (current > target + 0.5) return '🔥';
-    if (current < target - 0.5) return '❄️';
-  }
-  return '🌡️';
+// Boost badge - zobrazí 🔥 alebo ❄️ keď je boost aktívny
+function getBoostBadge(boostActive: boolean, boostTemp?: number, scheduledTemp?: number): string | null {
+  if (!boostActive || boostTemp === undefined || scheduledTemp === undefined) return null;
+  if (boostTemp > scheduledTemp) return '🔥';
+  if (boostTemp < scheduledTemp) return '❄️';
+  return null;
 }
 
-const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilities, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
+const RoomCard: React.FC<Props> = ({ room, roomLabel, roomIcon, colors, theme, capabilities, activateBurst, cancelOverride, toggleHvac, setSlidersHandler }) => {
   // subscribe only to the specific room slice
   const rm = useHouse((s: any) => s.rooms?.[room] || {});
   const displayName = roomLabel || room;
@@ -50,7 +49,9 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
   const effectiveTarget = boostActive ? boostTemp : targetValue;
 
   const sliderValue = effectiveTarget;
-  const icon = pickIcon(isReadonly, boostActive, currentValue, effectiveTarget);
+  const scheduledTemp = rm?.scheduledTemp ?? targetValue;
+  const icon = roomIcon || '🌡️';
+  const boostBadge = getBoostBadge(boostActive, boostTemp, scheduledTemp);
   const remaining = rm?.overrideUntil ? new Date(rm.overrideUntil) : undefined;
 
   const renderCount = React.useRef(0);
@@ -74,7 +75,18 @@ const RoomCard: React.FC<Props> = ({ room, roomLabel, colors, theme, capabilitie
       flexDirection: 'column'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <span style={{ fontSize: 32, pointerEvents: 'none' }}>{icon}</span>
+        <div style={{ position: 'relative', fontSize: 32, pointerEvents: 'none' }}>
+          <span>{icon}</span>
+          {boostBadge && (
+            <span style={{ 
+              position: 'absolute', 
+              top: -4, 
+              right: -8, 
+              fontSize: 20,
+              filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))'
+            }}>{boostBadge}</span>
+          )}
+        </div>
         <div style={{ flex: 1 }}>
           <h3 className="room-title" style={{ margin: 0, fontSize: 18, fontWeight: 600, color: colors.text ?? '#f1f5f9' }}>
             {displayName}
