@@ -1042,8 +1042,8 @@
     "type": "function",
     "z": "tab_alerts",
     "name": "Emergency Actions",
-    "func": "const alert = msg.payload;\nconst messages = [];\n\nconst user = env.get('PUSHOVER_USER');\nconst token = env.get('PUSHOVER_TOKEN');\n\n// Pushover emergency (priority=2, retry, expire)\nif (alert.actions.includes('pushover_emergency')) {\n    messages.push({\n        topic: 'apprise/notify',\n        payload: {\n            urls: `pover://${user}@${token}`,\n            title: 'EMERGENCY',\n            body: alert.message,\n            priority: 2,\n            retry: 30,\n            expire: 3600\n        }\n    });\n}\n\n// SMS via Gammu\nif (alert.actions.includes('sms')) {\n    const mobil = global.get('modes')?.settings?.mobil || '+421903789694';\n    messages.push({\n        topic: 'sms/send',\n        payload: {\n            number: mobil,\n            text: alert.message\n        }\n    });\n}\n\n// Siren control\nif (alert.actions.includes('siren')) {\n    messages.push({\n        topic: 'cmd/siren/main/state',\n        payload: 'ON'\n    });\n}\n\nnode.warn(`[alerts] Emergency: ${alert.message}`);\n\nreturn [messages];",
-    "outputs": 1,
+    "func": "const alert = msg.payload;\n\n// Pushover emergency via Apprise HTTP\nif (alert.actions.includes('pushover_emergency')) {\n    msg.payload = {\n        title: '🚨 EMERGENCY',\n        body: alert.message,\n        type: 'failure'\n    };\n    msg.headers = {'Content-Type': 'application/json'};\n    msg.url = 'http://apprise:8000/notify';\n    msg.method = 'POST';\n    \n    node.warn(`[alerts] Emergency: ${alert.message}`);\n    return [msg, null];\n}\n\n// SMS via Gammu\nif (alert.actions.includes('sms')) {\n    const mobil = global.get('modes')?.settings?.mobil || '+421903789694';\n    msg.topic = 'sms/send';\n    msg.payload = {\n        number: mobil,\n        text: alert.message\n    };\n    return [null, msg];\n}\n\n// Siren control\nif (alert.actions.includes('siren')) {\n    msg.topic = 'cmd/siren/main/state';\n    msg.payload = 'ON';\n    return [null, msg];\n}\n\nnode.warn(`[alerts] Emergency: ${alert.message}`);\nreturn null;",
+    "outputs": 2,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
@@ -1051,6 +1051,9 @@
     "x": 800,
     "y": 80,
     "wires": [
+      [
+        "alerts_http_out"
+      ],
       [
         "alerts_mqtt_out"
       ]
@@ -1061,8 +1064,8 @@
     "type": "function",
     "z": "tab_alerts",
     "name": "Warning Actions",
-    "func": "const alert = msg.payload;\nconst messages = [];\n\nconst user = env.get('PUSHOVER_USER');\nconst token = env.get('PUSHOVER_TOKEN');\n\n// Standard Pushover notification\nif (alert.actions.includes('pushover')) {\n    messages.push({\n        topic: 'apprise/notify',\n        payload: {\n            urls: `pover://${user}@${token}`,\n            title: 'Warning',\n            body: alert.message,\n            priority: 1\n        }\n    });\n}\n\nnode.warn(`[alerts] Warning: ${alert.message}`);\n\nreturn [messages];",
-    "outputs": 1,
+    "func": "const alert = msg.payload;\n\n// Standard Pushover notification via Apprise HTTP\nif (alert.actions.includes('pushover')) {\n    msg.payload = {\n        title: '⚠️ Warning',\n        body: alert.message,\n        type: 'warning'\n    };\n    msg.headers = {'Content-Type': 'application/json'};\n    msg.url = 'http://apprise:8000/notify';\n    msg.method = 'POST';\n    \n    node.warn(`[alerts] Warning: ${alert.message}`);\n    return [msg, null];\n}\n\nnode.warn(`[alerts] Warning (no actions): ${alert.message}`);\nreturn null;",
+    "outputs": 2,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
@@ -1070,6 +1073,9 @@
     "x": 800,
     "y": 140,
     "wires": [
+      [
+        "alerts_http_out"
+      ],
       [
         "alerts_mqtt_out"
       ]
@@ -1089,6 +1095,26 @@
     "x": 800,
     "y": 200,
     "wires": []
+  },
+  {
+    "id": "alerts_http_out",
+    "type": "http request",
+    "z": "tab_alerts",
+    "name": "Apprise HTTP",
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1010,
+    "y": 80,
+    "wires": [[]]
   },
   {
     "id": "alerts_mqtt_out",
