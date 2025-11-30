@@ -67,7 +67,7 @@
     "type": "tab",
     "label": "Humidity Control",
     "disabled": false,
-    "info": "Bathroom fan automation based on humidity\nHysteresis control: threshold_on 70%, threshold_off 60%\nManual override detection and cooldown logic"
+    "info": "Automatizácia ventilátora v kúpeľni na základe vlhkosti\nHysterézna kontrola: threshold_on 70%, threshold_off 60%\nDetekcia manuálneho prepnutia a cooldown logika"
   },
   {
     "id": "tab_seed",
@@ -2530,7 +2530,7 @@
     "id": "humidity_sensor_in",
     "type": "mqtt in",
     "z": "tab_humidity",
-    "name": "Bathroom Humidity",
+    "name": "Vlhkosť kúpeľne",
     "topic": "stat/sensor/kupelna_humidity/state",
     "qos": "1",
     "datatype": "auto",
