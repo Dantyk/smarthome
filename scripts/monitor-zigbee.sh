@@ -5,6 +5,7 @@ CONTAINER="compose-zigbee2mqtt-1"
 MQTT_HOST="localhost"
 MQTT_TOPIC="meta/alert/zigbee_monitor"
 STATE_FILE="/tmp/zigbee_last_status"
+ALERT_TIME_FILE="/tmp/zigbee_last_alert_time"
 
 # Get current status
 STATUS=$(docker inspect --format='{{.State.Status}}' "$CONTAINER" 2>/dev/null || echo "unknown")
@@ -15,17 +16,37 @@ LAST_STATUS=$(cat "$STATE_FILE" 2>/dev/null || echo "")
 # Save current status
 echo "$STATUS" > "$STATE_FILE"
 
-# If restarting or not running, send emergency alert
-if [ "$STATUS" = "restarting" ] && [ "$LAST_STATUS" != "restarting" ]; then
+# Check if restarting
+if [ "$STATUS" = "restarting" ]; then
+    # Check quiet hours (22:00 - 07:00)
+    HOUR=$(date +%H)
+    if [ "$HOUR" -ge 22 ] || [ "$HOUR" -lt 7 ]; then
+        echo "[$(date)] Zigbee monitor: alert suppressed (quiet hours $HOUR:xx)"
+        exit 0
+    fi
+    
+    # Check rate limiting (3 hours = 10800 seconds)
+    NOW=$(date +%s)
+    LAST_ALERT=$(cat "$ALERT_TIME_FILE" 2>/dev/null || echo 0)
+    ELAPSED=$((NOW - LAST_ALERT))
+    
+    if [ "$ELAPSED" -lt 10800 ]; then
+        MINUTES=$((ELAPSED / 60))
+        echo "[$(date)] Zigbee monitor: alert rate-limited (last: ${MINUTES}min ago)"
+        exit 0
+    fi
+    
+    # Send alert and save timestamp
+    echo "$NOW" > "$ALERT_TIME_FILE"
     mosquitto_pub -h "$MQTT_HOST" -t "$MQTT_TOPIC" -m '{
-        "severity":"emergency",
+        "severity":"warning",
         "type":"zigbee_offline",
         "location":"system",
         "message":"🔌 ZIGBEE ADAPTER CRASHUJE: Kontajner v Restarting stave",
         "timestamp":"'$(date -Iseconds)'",
-        "actions":["pushover_emergency"]
+        "actions":["pushover"]
     }'
-    echo "[$(date)] Zigbee monitor: sent emergency alert (status=$STATUS)"
+    echo "[$(date)] Zigbee monitor: sent warning alert (status=$STATUS)"
 fi
 
 # If recovered
