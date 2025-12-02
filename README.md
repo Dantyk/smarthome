@@ -580,6 +580,96 @@ curl -s "http://localhost:8086/api/v2/buckets?org=Home" \
 | `Grafana: No data` | Node-RED flows nie sú nakonfigurované - pozri sekciu vyššie |
 | `Profil nezapnutý` | Pridaj do COMPOSE_PROFILES v .env, napr.: `metrics,zigbee,zwave` |
 
+## 🔔 Monitoring a Notifikácie
+
+### Automatický monitoring služieb
+
+**Node-RED Health Check** (každé 2 minúty):
+- ✅ **baikal** - CalDAV kalendár
+- ✅ **nodered** - Node-RED engine
+- ✅ **zwavejsui** - Z-Wave controller
+- ✅ **apprise** - Push notifikácie
+
+**Zigbee2MQTT monitoring** (každé 3 minúty):
+- 📜 Bash script: `/scripts/monitor-zigbee.sh`
+- 🔍 Sleduje Docker container status cez Docker API
+- ⚠️ Warning alert pri crashe (rate limit: 3h, quiet hours: 22:00-07:00)
+- ✅ Recovery notifikácia pri obnovení
+
+**Nemonitorované služby:**
+- **mosquitto** - MQTT broker (nemá HTTP endpoint, monitoruje sa pasívne)
+- **influxdb** - metriky (nie kritické pre core funkcionalitu)
+- **grafana** - dashboard (nie kritické)
+- **ui** - Next.js web UI (nie kritické)
+
+### Push notifikácie (Pushover)
+
+**Konfigurácia:**
+1. Vytvor Pushover účet na https://pushover.net/
+2. Získaj **User Key** a vytvor **Application/API Token**
+3. Pridaj do `.env`:
+   ```bash
+   PUSHOVER_USER=your_user_key
+   PUSHOVER_TOKEN=your_app_token
+   ```
+4. Spusti Apprise profil:
+   ```bash
+   docker compose --profile notify up -d
+   ```
+
+**Typy alertov:**
+
+| Typ alertu | Severity | Rate limit | Quiet hours | Príklad |
+|------------|----------|------------|-------------|----------|
+| 🔥 **Smoke/Fire** | Emergency | ❌ Žiadny | ❌ Ignoruje | Požiar každé 3 min až kým nehasíš |
+| 🔌 **Zigbee crash** | Warning | ✅ 3h | ✅ 22:00-07:00 | Max 1x za 3h, v noci nič |
+| ⚠️ **Service offline** | Warning | ✅ 3h | ✅ 22:00-07:00 | Max 1x za 3h, v noci nič |
+| ✅ **Recovery** | Info | ❌ Žiadny | ❌ Vždy | Hneď keď sa opraví |
+
+**Rate limiting pravidlá:**
+- **Kritické alerty** (smoke, fire): Posielané VŽDY okamžite, bez obmedzení
+- **Nekritické** (service offline, Zigbee): Max 1 alert za 3 hodiny na službu
+- **Quiet hours**: 22:00-07:00 - nekritické alerty sa nepošlú
+
+**Manuálne testovanie:**
+```bash
+# Test emergency alert (smoke)
+mosquitto_pub -h localhost -t "event/safety/smoke/obyvacka/trigger" \
+  -m '{"detected":true}'
+
+# Test warning alert (custom)
+mosquitto_pub -h localhost -t "meta/alert/test" -m '{
+  "severity":"warning",
+  "type":"test_alert",
+  "location":"system",
+  "message":"⚠️ Test notifikácie",
+  "timestamp":"'$(date -Iseconds)'",
+  "actions":["pushover"]
+}'
+
+# Kontrola Apprise logov
+docker compose logs --tail=20 apprise | grep Pushover
+```
+
+**Custom alerts cez MQTT:**
+- Topic: `meta/alert/*`
+- Payload: JSON s poľami `severity`, `type`, `location`, `message`, `timestamp`, `actions`
+- Podporované severity: `emergency`, `warning`, `info`
+- Podporované actions: `pushover`, `pushover_emergency`, `sms`, `siren`
+
+### Cron monitoring jobs
+
+```bash
+# Zoznam aktívnych cron jobov
+crontab -l
+
+# Výstup:
+# */3 * * * * /home/pi/smarthome/scripts/monitor-zigbee.sh >> /tmp/zigbee_monitor.log 2>&1
+
+# Kontrola logov
+tail -f /tmp/zigbee_monitor.log
+```
+
 ## 🔧 Údržba
 
 ### Logy
