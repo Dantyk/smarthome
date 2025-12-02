@@ -26,6 +26,7 @@ services:
       - ../flows/nodered:/data
       - ./config/nodered/settings.js:/data/settings.js:ro
       - ../config:/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   baikal:
     image: ckulka/baikal:0.10.1-apache
     restart: unless-stopped
