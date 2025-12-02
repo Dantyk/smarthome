@@ -978,6 +978,45 @@
     ]
   },
   {
+    "id": "alerts_custom_in",
+    "type": "mqtt in",
+    "z": "tab_alerts",
+    "name": "Custom Alerts",
+    "topic": "meta/alert/#",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": false,
+    "inputs": 0,
+    "x": 140,
+    "y": 260,
+    "wires": [
+      [
+        "alerts_custom_parser"
+      ]
+    ]
+  },
+  {
+    "id": "alerts_custom_parser",
+    "type": "function",
+    "z": "tab_alerts",
+    "name": "Custom Alert Parser",
+    "func": "// Custom alerts come as JSON with full structure\n// {severity, type, location, message, timestamp, actions}\nconst alert = msg.payload;\n\n// Validate required fields\nif (!alert.severity || !alert.message) {\n    node.error('Invalid custom alert: missing severity or message');\n    return null;\n}\n\n// Store alert in history\nconst alertHistory = global.get('alertHistory') || [];\nalertHistory.unshift(alert);\nif (alertHistory.length > 100) alertHistory.pop();\nglobal.set('alertHistory', alertHistory);\n\nnode.warn(`[alerts] Custom ${alert.severity}: ${alert.message}`);\n\nmsg.payload = alert;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 260,
+    "wires": [
+      [
+        "alerts_switch"
+      ]
+    ]
+  },
+  {
     "id": "alerts_router",
     "type": "function",
     "z": "tab_alerts",
