@@ -762,4 +762,4 @@ MIT License - Voľne použiteľné pre osobné i komerčné účely.
 
 ## 👨‍💻 Autor
 
-David Komanuch - [@Dantyk](https://github.com/Dantyk)
+Luboslav Manuch - [@Dantyk](https://github.com/Dantyk)
