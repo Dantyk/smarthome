@@ -108,6 +108,13 @@ function topicMatches(filter: string, topic: string): boolean {
   return i === t.length;
 }
 
+/**
+ * Get raw MQTT client for status checks (e.g., health endpoint)
+ */
+export function getMqttClient(): MqttClient | null {
+  return client;
+}
+
 export function subscribe(topic: string, cb: (t: string, m: Uint8Array) => void) {
   const c = getMqtt();
   if (!c) {

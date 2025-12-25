@@ -4,19 +4,21 @@ Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teplot
 
 ## 📚 Dokumentácia
 
-**Začíname**:
-- [QUICKSTART.md](docs/QUICKSTART.md) - Rýchly štart (5 minút)
-- [DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment guide
+### Používateľská dokumentácia
+- **[QUICKSTART.md](QUICKSTART.md)** - Rýchly 5-minútový setup guide
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment (30 min)
+- **[CHANGELOG.md](CHANGELOG.md)** - Verzie a história zmien
 
-**Production Readiness**:
-- [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) - Production features overview
-- [IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md) - Complete implementation summary
+### Prevádzková dokumentácia
+- **[docs/TESTING.md](docs/TESTING.md)** - Testing guide (E2E, MQTT, API, load testing)
+- **[docs/ALERTS.md](docs/ALERTS.md)** - Alert management a response procedures
+- **[docs/SECURITY.md](docs/SECURITY.md)** - Security config (MQTT ACL, UI auth, firewall)
+- **[docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md)** - Production features overview
 
-**Operational Guides**:
-- [TESTING.md](docs/TESTING.md) - Testing guide (E2E, MQTT, API, Load testing)
-- [ALERTS.md](docs/ALERTS.md) - Alert management & response procedures
-- [SECURITY.md](docs/SECURITY.md) - Security configuration (MQTT ACL, UI auth, firewall)
-- [CHANGELOG.md](docs/CHANGELOG.md) - Version history
+### Technická dokumentácia
+- **[docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** - Kompletné implementation summary
+- **[docs/architecture/](docs/architecture/)** - Architecture Decision Records (ADR) + C4 diagramy
+- **[docs/runbooks/](docs/runbooks/)** - Operational runbooks pre bežné scenáre
 
 ---
 

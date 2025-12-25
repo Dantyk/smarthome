@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
+import { getMqttClient } from '@/lib/mqtt';
 
 /**
  * Health Check endpoint pre UI službu
  * 
  * Kontroluje:
  * - Next.js beží
- * - MQTT pripojenie (optional check)
+ * - MQTT pripojenie (connected/disconnected)
  * - Environment variables
  */
 export async function GET() {
   try {
+    const mqttClient = getMqttClient();
+    const mqttStatus = mqttClient?.connected ? 'connected' : 'disconnected';
+    
     const health = {
-      status: 'healthy',
+      status: mqttStatus === 'connected' ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       service: 'smarthome-ui',
       version: process.env.npm_package_version || '1.0.0',
@@ -19,11 +23,12 @@ export async function GET() {
       checks: {
         nextjs: 'ok',
         env: checkEnv(),
-        mqtt: 'not_implemented' // TODO: Implement MQTT connection check
+        mqtt: mqttStatus
       }
     };
     
-    return NextResponse.json(health, { status: 200 });
+    const statusCode = mqttStatus === 'connected' ? 200 : 503;
+    return NextResponse.json(health, { status: statusCode });
   } catch (error) {
     return NextResponse.json(
       { 
