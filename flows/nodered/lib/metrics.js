@@ -30,7 +30,12 @@ class MetricsCollector {
       
       // Error handler metrics
       retry_attempts: 0,
-      dlq_messages: 0
+      dlq_messages: 0,
+      
+      // Cache metrics
+      cache_hits_total: 0,
+      cache_misses_total: 0,
+      cache_size: 0
     };
     
     this.startTime = Date.now();
@@ -128,6 +133,15 @@ class MetricsCollector {
   }
   
   /**
+   * Update cache metrics
+   */
+  updateCacheMetrics(stats) {
+    this.metrics.cache_hits_total = stats.hits || 0;
+    this.metrics.cache_misses_total = stats.misses || 0;
+    this.metrics.cache_size = stats.size || 0;
+  }
+  
+  /**
    * Calculate percentile from array
    */
   percentile(arr, p) {
@@ -212,6 +226,27 @@ class MetricsCollector {
     lines.push('# TYPE dlq_messages gauge');
     lines.push(`dlq_messages ${this.metrics.dlq_messages}`);
     
+    // Cache metrics
+    lines.push('# HELP cache_hits_total Total cache hits');
+    lines.push('# TYPE cache_hits_total counter');
+    lines.push(`cache_hits_total ${this.metrics.cache_hits_total}`);
+    
+    lines.push('# HELP cache_misses_total Total cache misses');
+    lines.push('# TYPE cache_misses_total counter');
+    lines.push(`cache_misses_total ${this.metrics.cache_misses_total}`);
+    
+    lines.push('# HELP cache_size Current cache size');
+    lines.push('# TYPE cache_size gauge');
+    lines.push(`cache_size ${this.metrics.cache_size}`);
+    
+    const totalCacheRequests = this.metrics.cache_hits_total + this.metrics.cache_misses_total;
+    const cacheHitRate = totalCacheRequests > 0 
+      ? this.metrics.cache_hits_total / totalCacheRequests 
+      : 0;
+    lines.push('# HELP cache_hit_rate Cache hit rate (0-1)');
+    lines.push('# TYPE cache_hit_rate gauge');
+    lines.push(`cache_hit_rate ${cacheHitRate.toFixed(4)}`);
+    
     // MQTT duration histogram
     if (this.metrics.mqtt_message_duration_ms.length > 0) {
       const p50 = this.percentile(this.metrics.mqtt_message_duration_ms, 0.5);
@@ -257,7 +292,15 @@ class MetricsCollector {
       },
       http: {
         requests: this.metrics.http_requests_total,
-        durationP50: this.percentile(this.metrics.http_request_duration_ms, 0.5),
+       ,
+      cache: {
+        hits: this.metrics.cache_hits_total,
+        misses: this.metrics.cache_misses_total,
+        size: this.metrics.cache_size,
+        hitRate: this.metrics.cache_hits_total + this.metrics.cache_misses_total > 0
+          ? this.metrics.cache_hits_total / (this.metrics.cache_hits_total + this.metrics.cache_misses_total)
+          : 0
+      } durationP50: this.percentile(this.metrics.http_request_duration_ms, 0.5),
         durationP95: this.percentile(this.metrics.http_request_duration_ms, 0.95),
         durationP99: this.percentile(this.metrics.http_request_duration_ms, 0.99)
       },

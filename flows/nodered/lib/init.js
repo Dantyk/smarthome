@@ -13,6 +13,8 @@ const { initGracefulShutdown } = require('./lib/graceful-shutdown');
 const ConfigWatcher = require('./lib/config-watcher');
 const { RateLimiter, QueueMonitor } = require('./lib/rate-limiter');
 const { getMetricsCollector } = require('./lib/metrics');
+const RedisCache = require('./lib/cache');
+const redis = require('redis');
 const path = require('path');
 
 module.exports = function(RED) {
@@ -31,6 +33,66 @@ module.exports = function(RED) {
   });
   
   logger.info('Rate limiter initialized');
+  
+  // Initialize Redis cache
+  let redisClient = null;
+  const redisHost = process.env.REDIS_HOST || 'redis';
+  const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
+  
+  try {
+    redisClient = redis.createClient({
+      socket: {
+        host: redisHost,
+        port: redisPort,
+        connectTimeout: 5000
+      },
+      database: 0,
+      enableOfflineQueue: false
+    });
+    
+    redisClient.on('error', (err) => {
+      logger.error('Redis connection error', { error: err.message });
+    });
+    
+    redisClient.on('connect', () => {
+      logger.info('Redis connected', { host: redisHost, port: redisPort });
+    });
+    
+    redisClient.on('ready', () => {
+      logger.info('Redis ready');
+    });
+    
+    // Connect async
+    redisClient.connect().catch(err => {
+      logger.warn('Redis connection failed, using in-memory cache fallback', { error: err.message });
+      redisClient = null;
+    });
+  } catch (err) {
+    logger.warn('Redis client creation failed, using in-memory cache fallback', { error: err.message });
+    redisClient = null;
+  }
+  
+  // Initialize cache (with or without Redis)
+  global.cache = new RedisCache(redisClient);
+  logger.info('Cache initialized', { backend: redisClient ? 'Redis' : 'Memory' });
+  
+  // Cache warming - preload frequently accessed data
+  async function warmCache() {
+    try {
+      logger.info('Cache warming started');
+      
+      // Preload modes config
+      const initialConfig = global.configWatcher.getCurrentConfig();
+      if (initialConfig) {
+        await global.cache.cacheModesConfig(initialConfig);
+        logger.info('Modes config cached', { modes: initialConfig.modes?.length || 0 });
+      }
+      
+      logger.info('Cache warming complete');
+    } catch (err) {
+      logger.error('Cache warming failed', { error: err.message });
+    }
+  }
   
   // Initialize config watcher
   const configPath = path.join(__dirname, '../../../config/modes.yaml');
@@ -56,6 +118,9 @@ module.exports = function(RED) {
   logger.info('Config watcher started', { 
     modes: initialConfig.modes?.length || 0 
   });
+  
+  // Warm cache after config is loaded
+  warmCache();
   
   // Get MQTT client (after Node-RED starts)
   RED.events.on('runtime-event', (event) => {
@@ -96,6 +161,14 @@ module.exports = function(RED) {
   // Make logger, error handler, and metrics globally available
   global.logger = logger;
   global.metrics = getMetricsCollector();
+  
+  // Expose cache stats via metrics
+  setInterval(() => {
+    if (global.cache && global.metrics) {
+      const stats = global.cache.getStats();
+      global.metrics.updateCacheMetrics(stats);
+    }
+  }, 10000); // Update every 10s
   
   logger.info('Node-RED SmartHome libraries loaded');
   
