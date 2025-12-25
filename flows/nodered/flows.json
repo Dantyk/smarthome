@@ -1,5 +1,12 @@
 [
   {
+    "id": "tab_init",
+    "type": "tab",
+    "label": "Init: SmartHome Libraries",
+    "disabled": false,
+    "info": "Inicializácia Redis cache, metrics, logger, rate limiter\nSpustí sa automaticky pri štarte Node-RED\nLog prefix: [init]"
+  },
+  {
     "id": "tab_loader",
     "type": "tab",
     "label": "Loader: modes.yaml",
@@ -4357,6 +4364,68 @@
     "broker": "mqtt_broker",
     "x": 590,
     "y": 160,
+    "wires": []
+  },
+  {
+    "id": "init_inject",
+    "type": "inject",
+    "z": "tab_init",
+    "name": "Startup: Initialize SmartHome",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "2",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 80,
+    "wires": [
+      [
+        "init_function"
+      ]
+    ]
+  },
+  {
+    "id": "init_function",
+    "type": "function",
+    "z": "tab_init",
+    "name": "Load init.js",
+    "func": "// Init SmartHome libraries - simplified approach\n// Since we can't use require() or global context easily,\n// we'll call init.js indirectly via exec node or skip for now\n\nnode.warn('[init] Bootstrap flow triggered - init.js integration pending');\nnode.warn('[init] Manual workaround: Add init.js to nodesDir or create custom node');\n\nmsg.payload = {\n    status: 'skipped',\n    reason: 'init.js integration requires custom node or nodesDir setup',\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 80,
+    "wires": [
+      [
+        "init_debug"
+      ]
+    ]
+  },
+  {
+    "id": "init_debug",
+    "type": "debug",
+    "z": "tab_init",
+    "name": "Init Status",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 600,
+    "y": 80,
     "wires": []
   }
 ]

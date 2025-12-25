@@ -10,14 +10,6 @@ module.exports = {
   },
   
   // Enable function external modules
-  functionExternalModules: true,
-  
-  // Expose init function in global context
-  functionGlobalContext: {
-    initSmartHome: function(RED) {
-      const initFunc = require('/data/lib/init.js');
-      return initFunc(RED);
-    }
-  }
+  functionExternalModules: true
 }
 
