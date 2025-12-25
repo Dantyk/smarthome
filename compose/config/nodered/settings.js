@@ -1,7 +1,3 @@
-const path = require('path');
-
-let settingsExported = false;
-
 module.exports = {
   flowFile: "flows.json",
   credentialSecret: process.env.NR_CRED_SECRET || "change-me",
@@ -13,18 +9,15 @@ module.exports = {
     }
   },
   
-  // Hook to initialize custom libraries after Node-RED starts
-  httpNodeMiddleware: function(req, res, next) {
-    // Call init.js only once when Node-RED is ready
-    if (!settingsExported && global.RED) {
-      settingsExported = true;
-      try {
-        const initFunc = require('/data/lib/init.js');
-        initFunc(global.RED);
-      } catch (err) {
-        console.error('Failed to load init.js:', err);
-      }
+  // Enable function external modules
+  functionExternalModules: true,
+  
+  // Expose init function in global context
+  functionGlobalContext: {
+    initSmartHome: function(RED) {
+      const initFunc = require('/data/lib/init.js');
+      return initFunc(RED);
     }
-    next();
   }
 }
+
