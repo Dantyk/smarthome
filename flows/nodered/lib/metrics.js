@@ -292,7 +292,10 @@ class MetricsCollector {
       },
       http: {
         requests: this.metrics.http_requests_total,
-       ,
+        durationP50: this.percentile(this.metrics.http_request_duration_ms, 0.5),
+        durationP95: this.percentile(this.metrics.http_request_duration_ms, 0.95),
+        durationP99: this.percentile(this.metrics.http_request_duration_ms, 0.99)
+      },
       cache: {
         hits: this.metrics.cache_hits_total,
         misses: this.metrics.cache_misses_total,
@@ -300,9 +303,6 @@ class MetricsCollector {
         hitRate: this.metrics.cache_hits_total + this.metrics.cache_misses_total > 0
           ? this.metrics.cache_hits_total / (this.metrics.cache_hits_total + this.metrics.cache_misses_total)
           : 0
-      } durationP50: this.percentile(this.metrics.http_request_duration_ms, 0.5),
-        durationP95: this.percentile(this.metrics.http_request_duration_ms, 0.95),
-        durationP99: this.percentile(this.metrics.http_request_duration_ms, 0.99)
       },
       config: {
         reloads: this.metrics.config_reloads_total

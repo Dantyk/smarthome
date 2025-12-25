@@ -1,0 +1,10 @@
+{
+  "name": "node-red-contrib-smarthome-init",
+  "version": "1.0.0",
+  "description": "SmartHome initialization node for Redis cache, metrics, logger",
+  "node-red": {
+    "nodes": {
+      "smarthome-init": "smarthome-init.js"
+    }
+  }
+}
