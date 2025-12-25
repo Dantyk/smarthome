@@ -7,13 +7,13 @@
  * - Graceful shutdown
  */
 
-const logger = require('./lib/logger');
-const { DeadLetterQueue } = require('./lib/error-handler');
-const { initGracefulShutdown } = require('./lib/graceful-shutdown');
-const ConfigWatcher = require('./lib/config-watcher');
-const { RateLimiter, QueueMonitor } = require('./lib/rate-limiter');
-const { getMetricsCollector } = require('./lib/metrics');
-const RedisCache = require('./lib/cache');
+const logger = require('./logger');
+const { DeadLetterQueue } = require('./error-handler');
+const { initGracefulShutdown } = require('./graceful-shutdown');
+const ConfigWatcher = require('./config-watcher');
+const { RateLimiter, QueueMonitor } = require('./rate-limiter');
+const { getMetricsCollector } = require('./metrics');
+const RedisCache = require('./cache');
 const redis = require('redis');
 const path = require('path');
 
@@ -95,8 +95,8 @@ module.exports = function(RED) {
   }
   
   // Initialize config watcher
-  const configPath = path.join(__dirname, '../../../config/modes.yaml');
-  const schemaPath = path.join(__dirname, '../../../config/modes.schema.json');
+  const configPath = path.join(__dirname, '../../config/modes.yaml');
+  const schemaPath = path.join(__dirname, '../../config/modes.schema.json');
   
   global.configWatcher = new ConfigWatcher(
     configPath,

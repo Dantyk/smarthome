@@ -12,6 +12,12 @@
     "node-red-contrib-influxdb": "^0.7.0",
     "node-red-dashboard": "^3",
     "node-red-node-email": "~5.0.0",
+    "redis": "^4.7.1",
     "winston": "^3.19.0"
+  },
+  "node-red": {
+    "nodes": {
+      "init": "lib/init.js"
+    }
   }
 }
