@@ -13,13 +13,20 @@ class RedisCache {
   constructor(redisClient) {
     this.redis = redisClient;
     this.enabled = false;
+    this.memoryCache = new Map();
+    
+    // Metrics tracking
+    this.stats = {
+      hits: 0,
+      misses: 0,
+      sets: 0
+    };
     
     if (redisClient) {
       this.enabled = true;
       logger.info('Redis cache enabled');
     } else {
       logger.warn('Redis not available, using in-memory fallback');
-      this.memoryCache = new Map();
     }
   }
   
@@ -30,12 +37,28 @@ class RedisCache {
     try {
       if (this.enabled) {
         const value = await this.redis.get(key);
-        return value ? JSON.parse(value) : null;
+        const result = value ? JSON.parse(value) : null;
+        
+        // Track hits/misses
+        if (result !== null) {
+          this.stats.hits++;
+        } else {
+          this.stats.misses++;
+        }
+        
+        return result;
       } else {
-        return this.memoryCache.get(key) || null;
+        const result = this.memoryCache.get(key) || null;
+        if (result !== null) {
+          this.stats.hits++;
+        } else {
+          this.stats.misses++;
+        }
+        return result;
       }
     } catch (error) {
       logger.error('Cache get error', { key, error: error.message });
+      this.stats.misses++;
       return null;
     }
   }
@@ -64,6 +87,7 @@ class RedisCache {
         }
       }
       
+      this.stats.sets++;
       return true;
     } catch (error) {
       logger.error('Cache set error', { key, error: error.message });
@@ -208,23 +232,36 @@ class RedisCache {
    */
   async getStats() {
     try {
+      const totalRequests = this.stats.hits + this.stats.misses;
+      const hitRate = totalRequests > 0 ? (this.stats.hits / totalRequests) : 0;
+      
+      let size = 0;
       if (this.enabled) {
-        const info = await this.redis.info('stats');
-        return {
-          enabled: true,
-          type: 'redis',
-          info: info
-        };
+        // Get number of keys matching our patterns
+        const keys = await this.redis.keys('*');
+        size = keys.length;
       } else {
-        return {
-          enabled: false,
-          type: 'memory',
-          size: this.memoryCache.size
-        };
+        size = this.memoryCache.size;
       }
+      
+      return {
+        enabled: this.enabled,
+        type: this.enabled ? 'redis' : 'memory',
+        hits: this.stats.hits,
+        misses: this.stats.misses,
+        sets: this.stats.sets,
+        size: size,
+        hitRate: Math.round(hitRate * 10000) / 10000
+      };
     } catch (error) {
       logger.error('Cache stats error', { error: error.message });
-      return { enabled: false, error: error.message };
+      return {
+        enabled: false,
+        error: error.message,
+        hits: this.stats.hits,
+        misses: this.stats.misses,
+        sets: this.stats.sets
+      };
     }
   }
 }

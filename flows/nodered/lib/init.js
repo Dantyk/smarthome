@@ -174,9 +174,9 @@ module.exports = function(RED) {
   }
   
   // Expose cache stats via metrics
-  setInterval(() => {
+  setInterval(async () => {
     if (global.cache && global.metrics) {
-      const stats = global.cache.getStats();
+      const stats = await global.cache.getStats();
       global.metrics.updateCacheMetrics(stats);
     }
   }, 10000); // Update every 10s
