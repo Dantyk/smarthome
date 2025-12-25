@@ -756,6 +756,101 @@ docker compose up -d ui
 
 Add these steps to your normal code-change workflow to avoid serving stale server-rendered HTML or client bundles.
 
+## 🚀 Redis Cache Layer
+
+SmartHome používa **Redis** pre cachovanie často používaných dát a zníženie záťaže na API/databázy.
+
+### Čo sa cachuje
+
+| Typ dát | TTL | Účel |
+|---------|-----|------|
+| **Weather API** | 10 min (600s) | Znížiť počet volaní OpenWeather API |
+| **Modes Config** | Persistent | Rýchly prístup k `modes.yaml` bez disk I/O |
+| **MQTT State** | 1 hod (3600s) | Predchádzať stratám stavu pri reštarte |
+
+### Metrics Endpoints
+
+Cache poskytuje real-time metriky:
+
+```bash
+# Prometheus formát (pre Grafana)
+curl http://localhost:1880/metrics
+
+# JSON formát (debugging)
+curl http://localhost:1880/metrics/json | jq '.cache'
+```
+
+**Príklad výstupu:**
+```json
+{
+  "hits": 42,
+  "misses": 3,
+  "size": 2,
+  "hitRate": 0.9333
+}
+```
+
+### Interné API
+
+Cache je dostupný v Node-RED function nodes cez `global.get('getCache')()`:
+
+```javascript
+// Weather cache check
+const getCache = global.get('getCache');
+const cache = getCache ? getCache() : null;
+
+if (cache) {
+    const data = await cache.get('weather:current:48.1486:17.1077');
+    if (data) {
+        node.warn('[weather] Cache HIT');
+        return data;
+    }
+}
+```
+
+### Redis CLI Commands
+
+```bash
+# Zobraziť všetky keys
+docker exec compose-redis-1 redis-cli KEYS "*"
+
+# Skontrolovať TTL
+docker exec compose-redis-1 redis-cli TTL "weather:current:48.1486:17.1077"
+
+# Zobraziť hodnotu
+docker exec compose-redis-1 redis-cli GET "config:modes" | jq
+
+# Flush cache (DEBUG only!)
+docker exec compose-redis-1 redis-cli FLUSHALL
+```
+
+### Test Scripts
+
+```bash
+# Rýchly test - overiť cache funguje
+./scripts/test_cache_quick.sh
+
+# Plný TTL test - overenie expirácie (trvá 10+ min)
+./scripts/test_cache_ttl.sh
+```
+
+### Troubleshooting
+
+**Problem:** Cache metrics sú 0 napriek bežiacim flows
+
+**Riešenie:**
+1. Over Redis connection: `docker compose logs redis | grep "Ready to accept"`
+2. Reštartuj Node-RED: `docker compose restart nodered`
+3. Skontroluj logy: `docker compose logs nodered | grep Cache`
+
+**Problem:** "this.redis.setex is not a function"
+
+**Riešenie:** Redis v4+ používa `setEx` (capital E) namiesto `setex`. Kód už opravený.
+
+**Problem:** Function nodes vidia cache ako `undefined`
+
+**Riešenie:** Používaj `global.get('getCache')()` pattern namiesto `global.cache` priamo. Settings.js obsahuje lazy getters.
+
 ### Zálohovanie
 ```bash
 # Baïkal kalendár
