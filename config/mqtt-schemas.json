@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SmartHome MQTT Message Schemas",
+  "description": "JSON Schema definitions for all MQTT topics in the SmartHome system",
+  "definitions": {
+    "temperature": {
+      "type": "number",
+      "minimum": -20,
+      "maximum": 40,
+      "description": "Temperature in Celsius"
+    },
+    "targetTemperature": {
+      "type": "number",
+      "minimum": 10,
+      "maximum": 30,
+      "description": "Target temperature setpoint in Celsius"
+    },
+    "humidity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Relative humidity percentage"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "roomName": {
+      "type": "string",
+      "enum": ["spalna", "detska", "obyvacka", "kuchyna", "kupelna"],
+      "description": "Valid room identifier"
+    },
+    "modeName": {
+      "type": "string",
+      "pattern": "^[a-z_]+$",
+      "minLength": 1,
+      "maxLength": 50,
+      "description": "Operating mode name (lowercase with underscores)"
+    }
+  },
+  "schemas": {
+    "virt/room/+/target_temp": {
+      "description": "Target temperature for a room",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": { "$ref": "#/definitions/targetTemperature" },
+            "timestamp": { "$ref": "#/definitions/timestamp" },
+            "source": {
+              "type": "string",
+              "enum": ["planner", "resolver", "ui", "override", "boost"],
+              "description": "Origin of the temperature command"
+            }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        },
+        { "$ref": "#/definitions/targetTemperature" }
+      ]
+    },
+    "stat/hvac/+/current_temp": {
+      "description": "Current measured temperature from sensor",
+      "$ref": "#/definitions/temperature"
+    },
+    "stat/hvac/+/humidity": {
+      "description": "Current measured humidity from sensor",
+      "$ref": "#/definitions/humidity"
+    },
+    "stat/hvac/+/enabled": {
+      "description": "HVAC enabled/disabled state",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["true", "false", "1", "0", "on", "off"] }
+      ]
+    },
+    "virt/room/+/enabled": {
+      "description": "Virtual topic for HVAC enable/disable commands",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["true", "false", "1", "0", "on", "off"] }
+      ]
+    },
+    "virt/system/active_mode": {
+      "description": "Currently active system mode",
+      "$ref": "#/definitions/modeName"
+    },
+    "virt/weather/current": {
+      "description": "Current weather data",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "temp": { "$ref": "#/definitions/temperature" },
+            "description": { "type": "string" },
+            "icon": { "type": "string" },
+            "humidity": { "$ref": "#/definitions/humidity" },
+            "wind_speed": { "type": "number", "minimum": 0 },
+            "location": { "type": "string" },
+            "country": { "type": "string" },
+            "timestamp": { "$ref": "#/definitions/timestamp" }
+          },
+          "required": ["temp"]
+        },
+        { "$ref": "#/definitions/temperature" }
+      ]
+    },
+    "virt/boost/+/minutes": {
+      "description": "Remaining boost minutes for a room",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 480,
+      "description": "Minutes remaining (0-480, max 8 hours)"
+    },
+    "virt/boost/+/target_temp": {
+      "description": "Boost mode target temperature",
+      "$ref": "#/definitions/targetTemperature"
+    },
+    "cmd/hvac/+/setpoint": {
+      "description": "Direct HVAC setpoint command",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": { "$ref": "#/definitions/targetTemperature" },
+            "timestamp": { "$ref": "#/definitions/timestamp" }
+          },
+          "required": ["value"]
+        },
+        { "$ref": "#/definitions/targetTemperature" }
+      ]
+    },
+    "cmd/room/+/set_target": {
+      "description": "Command to set room target temperature",
+      "type": "object",
+      "properties": {
+        "value": { "$ref": "#/definitions/targetTemperature" },
+        "source": {
+          "type": "string",
+          "enum": ["ui", "api", "automation"],
+          "description": "Command source"
+        },
+        "trace_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Distributed tracing ID"
+        },
+        "timestamp": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["value", "source"]
+    },
+    "event/safety/smoke/+": {
+      "description": "Smoke detector alert",
+      "type": "object",
+      "properties": {
+        "detected": { "type": "boolean" },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "warning", "critical", "emergency"]
+        },
+        "location": { "$ref": "#/definitions/roomName" },
+        "timestamp": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["detected", "severity", "location", "timestamp"]
+    },
+    "event/security/motion/+": {
+      "description": "Motion sensor event",
+      "type": "object",
+      "properties": {
+        "detected": { "type": "boolean" },
+        "location": { "$ref": "#/definitions/roomName" },
+        "timestamp": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["detected", "location", "timestamp"]
+    },
+    "meta/service/+/online": {
+      "description": "Service health heartbeat",
+      "oneOf": [
+        { "type": "boolean" },
+        {
+          "type": "object",
+          "properties": {
+            "online": { "type": "boolean" },
+            "version": { "type": "string" },
+            "timestamp": { "$ref": "#/definitions/timestamp" },
+            "uptime": { "type": "number", "minimum": 0 }
+          },
+          "required": ["online"]
+        }
+      ]
+    }
+  }
+}

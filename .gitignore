@@ -38,3 +38,18 @@ compose/config/zigbee2mqtt/*.backup*
 *.bak
 .*.backup
 *~
+
+# Production monitoring a reports
+backups/
+security-reports/
+tests/load/results/
+load-test-*.json
+load-test-*.html
+
+# Prometheus data
+compose/data/prometheus/
+
+# Jaeger data (in-memory, no persistence needed)
+
+# Lock files (keep package-lock.json for reproducibility)
+# package-lock.json je commitnutý pre verziu dependencies

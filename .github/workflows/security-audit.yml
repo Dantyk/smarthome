@@ -1,0 +1,116 @@
+name: Security Audit
+
+on:
+  schedule:
+    # Weekly on Monday at 2:00 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch: # Allow manual trigger
+  pull_request:
+    branches: [main]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+      
+      # Node-RED audit
+      - name: NPM Audit - Node-RED
+        working-directory: flows/nodered
+        run: |
+          npm audit --json > ../../npm-audit-nodered.json || true
+          npm audit
+        continue-on-error: true
+      
+      # UI audit
+      - name: NPM Audit - UI
+        working-directory: ui/smarthome-ui
+        run: |
+          npm audit --json > ../../npm-audit-ui.json || true
+          npm audit
+        continue-on-error: true
+      
+      # Docker image scanning
+      - name: Build UI image for scanning
+        working-directory: ui/smarthome-ui
+        run: |
+          docker build -t smarthome-ui:scan .
+      
+      - name: Scan UI Docker image
+        run: |
+          trivy image --severity HIGH,CRITICAL --format json --output trivy-ui.json smarthome-ui:scan
+          trivy image --severity HIGH,CRITICAL smarthome-ui:scan
+        continue-on-error: true
+      
+      - name: Scan base images
+        run: |
+          trivy image --severity HIGH,CRITICAL nodered/node-red:latest
+          trivy image --severity HIGH,CRITICAL eclipse-mosquitto:2
+          trivy image --severity HIGH,CRITICAL influxdb:2
+        continue-on-error: true
+      
+      # Upload results
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit-results
+          path: |
+            npm-audit-*.json
+            trivy-*.json
+          retention-days: 90
+      
+      # Create issue if vulnerabilities found
+      - name: Check for critical vulnerabilities
+        id: check_vulns
+        run: |
+          CRITICAL_NR=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit-nodered.json)
+          CRITICAL_UI=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit-ui.json)
+          TOTAL_CRITICAL=$((CRITICAL_NR + CRITICAL_UI))
+          
+          echo "critical_count=$TOTAL_CRITICAL" >> $GITHUB_OUTPUT
+          
+          if [ $TOTAL_CRITICAL -gt 0 ]; then
+            echo "⚠️ Found $TOTAL_CRITICAL critical vulnerabilities"
+            exit 1
+          fi
+      
+      - name: Create issue for critical vulnerabilities
+        if: failure() && steps.check_vulns.outputs.critical_count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const criticalCount = ${{ steps.check_vulns.outputs.critical_count }};
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Security Alert: ${criticalCount} Critical Vulnerabilities Detected`,
+              body: `## Security Audit Failed
+              
+              **Critical Vulnerabilities:** ${criticalCount}
+              
+              **Action Required:**
+              1. Review audit results in [workflow artifacts](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              2. Run \`npm audit fix\` in affected directories
+              3. Update dependencies manually if needed
+              
+              **Affected Components:**
+              - Node-RED dependencies
+              - UI dependencies
+              - Docker base images
+              
+              See [Security Audit workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/security-audit.yml) for details.`,
+              labels: ['security', 'critical']
+            });

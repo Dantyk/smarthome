@@ -6,11 +6,21 @@ services:
     volumes:
       - ./config/mosquitto:/mosquitto/config:ro
       - mosquitto_data:/mosquitto/data
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-W", "3"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
   nodered:
     image: nodered/node-red:latest
     restart: unless-stopped
     ports: ["1880:1880"]
-    depends_on: [mosquitto]
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - TZ=Europe/Bratislava
       - BAIKAL_BASE_URL=http://baikal:80/dav.php
@@ -22,17 +32,36 @@ services:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - PUSHOVER_USER=${PUSHOVER_USER}
       - PUSHOVER_TOKEN=${PUSHOVER_TOKEN}
+      - LOG_LEVEL=info
+      - MQTT_USER=${MQTT_USER:-nodered}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ../flows/nodered:/data
       - ./config/nodered/settings.js:/data/settings.js:ro
       - ../config:/config:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:1880"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
+  
   baikal:
     image: ckulka/baikal:0.10.1-apache
     restart: unless-stopped
     ports: ["8800:80"]
     volumes:
       - baikal_data:/var/www/baikal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/dav.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
   
   baikal-init:
     image: curlimages/curl:latest
@@ -128,9 +157,89 @@ services:
         NEXT_PUBLIC_LOCATION: Bratislava, SK
     restart: unless-stopped
     ports: ["8088:3000"]
-    depends_on: [mosquitto]
+    depends_on:
+      mosquitto:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
+      - MQTT_BROKER_URL=ws://mosquitto:9001
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    restart: unless-stopped
+    ports:
+      - "16686:16686"    # Jaeger UI
+      - "14268:14268"    # Jaeger collector HTTP
+      - "14250:14250"    # Jaeger gRPC
+      - "6831:6831/udp"  # Jaeger compact thrift
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:14269/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports: ["9090:9090"]
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  
+  alertmanager:
+    image: prom/alertmanager:latest
+    restart: unless-stopped
+    ports: ["9093:9093"]
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 volumes:
   mosquitto_data:
   baikal_data:
@@ -138,3 +247,6 @@ volumes:
   zwave_data:
   influxdb_data:
   grafana_data:
+  prometheus_data:
+  alertmanager_data:
+  redis_data:

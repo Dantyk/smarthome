@@ -316,14 +316,14 @@ export default function Home() {
     
     // NEW: Send boost messages (duration in minutes!)
     const durationMinutes = Math.round(duration * 60);
-    publish(`virt/boost/${room}/minutes`, String(durationMinutes), true);
-    publish(`virt/boost/${room}/target_temp`, String(targetTemp), true);
+    publish(`virt/boost/${room}/minutes`, String(durationMinutes), { retain: true });
+    publish(`virt/boost/${room}/target_temp`, String(targetTemp), { retain: true });
     
     // LEGACY: Keep old override topics for compatibility
-    publish(`virt/room/${room}/override_request`, { value: targetTemp, duration }, true);
-    publish(`cmd/hvac/${room}/override_duration`, String(duration), true);
-    publish(`cmd/hvac/${room}/setpoint`, String(targetTemp), true);
-    publish(`cmd/hvac/${room}/override`, { active: true, value: targetTemp, duration, until }, true);
+    publish(`virt/room/${room}/override_request`, { value: targetTemp, duration }, { retain: true });
+    publish(`cmd/hvac/${room}/override_duration`, String(duration), { retain: true });
+    publish(`cmd/hvac/${room}/setpoint`, String(targetTemp), { retain: true });
+    publish(`cmd/hvac/${room}/override`, { active: true, value: targetTemp, duration, until }, { retain: true });
     
     // Optimistically update UI state
     useHouse.setState((s: any) => ({
@@ -345,12 +345,12 @@ export default function Home() {
   
   const cancelOverride = useCallback((room: string) => {
     // Clear boost state
-    publish(`virt/boost/${room}/minutes`, '0', true);
-    publish(`virt/boost/${room}/target_temp`, '0', true);
+    publish(`virt/boost/${room}/minutes`, '0', { retain: true });
+    publish(`virt/boost/${room}/target_temp`, '0', { retain: true });
     
     // Clear legacy override
-    publish(`cmd/hvac/${room}/cancel_override`, 'true', false);
-    publish(`virt/room/${room}/override_request`, { active: false }, true);
+    publish(`cmd/hvac/${room}/cancel_override`, 'true');
+    publish(`virt/room/${room}/override_request`, { active: false }, { retain: true });
     
     // DON'T send setpoint - let Node-RED resolver recalculate from schedule
     // (rooms[room].target is already the boost value, not the original scheduled value)
@@ -383,8 +383,8 @@ export default function Home() {
         [room]: { ...s.rooms[room], hvacEnabled: enabled }
       }
     }));
-    publish(`cmd/hvac/${room}/enabled`, String(enabled), true);
-    publish(`virt/room/${room}/enabled`, String(enabled), true);
+    publish(`cmd/hvac/${room}/enabled`, String(enabled), { retain: true });
+    publish(`virt/room/${room}/enabled`, String(enabled), { retain: true });
     console.log(`[UI] HVAC ${enabled ? 'enabled' : 'disabled'} for ${room}`);
   }, []);
 

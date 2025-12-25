@@ -1,0 +1,77 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [master, develop]
+  schedule:
+    # Run daily at 2 AM
+    - cron: '0 2 * * *'
+
+jobs:
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Audit UI dependencies
+        working-directory: ui/smarthome-ui
+        run: |
+          npm audit --audit-level=high
+      
+      - name: Audit test dependencies
+        working-directory: tests
+        run: |
+          npm audit --audit-level=high
+
+  docker-scan:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build UI image
+        run: |
+          cd ui/smarthome-ui
+          docker build -t smarthome-ui:scan .
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'smarthome-ui:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  config-lint:
+    name: Configuration Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Lint Docker Compose
+        run: |
+          docker compose -f compose/docker-compose.yml config > /dev/null
+      
+      - name: Validate YAML configs
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: config/
+          config_file: .yamllint.yml
+          strict: true

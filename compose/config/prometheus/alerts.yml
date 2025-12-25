@@ -1,0 +1,205 @@
+groups:
+  - name: smarthome_critical
+    interval: 30s
+    rules:
+      # Circuit Breaker Alerts
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state > 1
+        for: 1m
+        labels:
+          severity: critical
+          component: error-handler
+        annotations:
+          summary: "Circuit breaker is open"
+          description: "Circuit breaker {{ $labels.name }} is {{ if eq $value 2.0 }}open{{ else }}half-open{{ end }}"
+          action: "Check Node-RED logs for repeated errors"
+      
+      # MQTT Error Rate
+      - alert: HighMQTTErrorRate
+        expr: rate(mqtt_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: mqtt
+        annotations:
+          summary: "High MQTT error rate"
+          description: "MQTT error rate is {{ $value | humanize }} errors/sec"
+          action: "Check MQTT broker logs and network connectivity"
+      
+      # Dead Letter Queue
+      - alert: DLQBacklog
+        expr: dlq_messages > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: error-handler
+        annotations:
+          summary: "Dead letter queue is growing"
+          description: "DLQ has {{ $value }} messages"
+          action: "Investigate failed messages in DLQ"
+      
+      - alert: DLQCritical
+        expr: dlq_messages > 500
+        for: 2m
+        labels:
+          severity: critical
+          component: error-handler
+        annotations:
+          summary: "Dead letter queue critical"
+          description: "DLQ has {{ $value }} messages - message processing is failing"
+          action: "URGENT: Check Node-RED error logs and restart if needed"
+      
+      # Rate Limiting
+      - alert: HighRateLimitRejection
+        expr: rate(rate_limit_rejected[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          component: rate-limiter
+        annotations:
+          summary: "High rate limit rejection rate"
+          description: "{{ $value | humanize }} messages/sec are being rejected"
+          action: "Check MQTT traffic patterns or increase rate limits"
+      
+      - alert: RateLimitCritical
+        expr: rate(rate_limit_rejected[1m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          component: rate-limiter
+        annotations:
+          summary: "Critical rate limit rejections"
+          description: "{{ $value | humanize }} messages/sec rejected - possible MQTT flood"
+          action: "URGENT: Investigate source of excessive MQTT traffic"
+      
+      # Queue Size
+      - alert: HighQueueSize
+        expr: mqtt_queue_size > 8000
+        for: 3m
+        labels:
+          severity: warning
+          component: queue-monitor
+        annotations:
+          summary: "MQTT queue is filling up"
+          description: "Queue size is {{ $value }} (80% threshold)"
+          action: "Monitor queue utilization, may need to increase processing speed"
+      
+      - alert: QueueOverflow
+        expr: mqtt_queue_size > 9500
+        for: 1m
+        labels:
+          severity: critical
+          component: queue-monitor
+        annotations:
+          summary: "MQTT queue near overflow"
+          description: "Queue size is {{ $value }} (95% threshold) - messages may be dropped"
+          action: "URGENT: Reduce message rate or increase queue capacity"
+  
+  - name: smarthome_performance
+    interval: 1m
+    rules:
+      # Response Time
+      - alert: SlowAPIResponses
+        expr: histogram_quantile(0.95, rate(http_request_duration_ms_bucket[5m])) > 2000
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API responses are slow"
+          description: "p95 response time is {{ $value | humanize }}ms (threshold: 2000ms)"
+          action: "Check system load and optimize slow endpoints"
+      
+      - alert: SlowMQTTProcessing
+        expr: histogram_quantile(0.95, rate(mqtt_message_duration_ms_bucket[5m])) > 500
+        for: 5m
+        labels:
+          severity: warning
+          component: mqtt
+        annotations:
+          summary: "MQTT message processing is slow"
+          description: "p95 processing time is {{ $value | humanize }}ms (threshold: 500ms)"
+          action: "Optimize MQTT message handlers or increase resources"
+      
+      # Retry Attempts
+      - alert: HighRetryRate
+        expr: rate(retry_attempts[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: error-handler
+        annotations:
+          summary: "High retry attempt rate"
+          description: "{{ $value | humanize }} retries/sec"
+          action: "Check logs for recurring errors causing retries"
+  
+  - name: smarthome_system
+    interval: 1m
+    rules:
+      # Service Health
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for 2 minutes"
+          action: "URGENT: Restart service - docker compose restart {{ $labels.job }}"
+      
+      # Config Reloads
+      - alert: FrequentConfigReloads
+        expr: rate(config_reloads_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: info
+          component: config-watcher
+        annotations:
+          summary: "Frequent config reloads"
+          description: "Config is being reloaded {{ $value | humanize }} times/sec"
+          action: "Check if modes.yaml is being modified repeatedly"
+      
+      # Active Traces
+      - alert: HighTraceCount
+        expr: active_traces > 800
+        for: 5m
+        labels:
+          severity: warning
+          component: tracing
+        annotations:
+          summary: "High number of active traces"
+          description: "{{ $value }} active traces (80% of max capacity)"
+          action: "Traces may be dropped, consider increasing max trace storage"
+  
+  - name: smarthome_business
+    interval: 2m
+    rules:
+      # Message Throughput
+      - alert: LowMessageThroughput
+        expr: rate(mqtt_messages_total[10m]) < 0.1
+        for: 10m
+        labels:
+          severity: info
+          component: mqtt
+        annotations:
+          summary: "Low MQTT message throughput"
+          description: "Only {{ $value | humanize }} messages/sec in last 10 minutes"
+          action: "Check if system is idle or if there's a connectivity issue"
+      
+      # Success Rate
+      - alert: LowMQTTSuccessRate
+        expr: |
+          (
+            sum(rate(mqtt_messages_total{status="success"}[5m]))
+            /
+            sum(rate(mqtt_messages_total[5m]))
+          ) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: mqtt
+        annotations:
+          summary: "Low MQTT success rate"
+          description: "Only {{ $value | humanizePercentage }} of messages are successful"
+          action: "Investigate error patterns in logs"

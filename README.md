@@ -2,6 +2,55 @@
 
 Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teploty, režimami a kalendárovým ovládaním.
 
+## 📚 Dokumentácia
+
+**Začíname**:
+- [QUICKSTART.md](docs/QUICKSTART.md) - Rýchly štart (5 minút)
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment guide
+
+**Production Readiness**:
+- [PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) - Production features overview
+- [IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md) - Complete implementation summary
+
+**Operational Guides**:
+- [TESTING.md](docs/TESTING.md) - Testing guide (E2E, MQTT, API, Load testing)
+- [ALERTS.md](docs/ALERTS.md) - Alert management & response procedures
+- [SECURITY.md](docs/SECURITY.md) - Security configuration (MQTT ACL, UI auth, firewall)
+- [CHANGELOG.md](docs/CHANGELOG.md) - Version history
+
+---
+
+## ✨ Production Features
+
+🔥 **Nové v 2025:** Kompletná production-ready infraštruktúra!
+
+### Reliability & Performance
+- ✅ **Config Hot Reload** - Zmeny v modes.yaml bez reštartu
+- ✅ **Rate Limiting** - MQTT backpressure protection (100 req/min)
+- ✅ **Redis Caching** - Weather, modes config, MQTT state (10min-1h TTL)
+- ✅ **Performance Profiling** - Automated bottleneck detection
+
+### Observability
+- ✅ **Distributed Tracing** - Jaeger integration (http://localhost:16686)
+- ✅ **Metrics & Monitoring** - Prometheus + Grafana dashboards
+- ✅ **17 Alert Rules** - Critical/Warning/Info with Discord + Email notifications
+- ✅ **Alertmanager** - Smart alert routing, grouping, inhibition
+
+### Testing & Quality
+- ✅ **Integration Tests** - Playwright E2E (14 tests) + MQTT (14 tests) + API (9 tests)
+- ✅ **Load Testing** - K6 stress tests (MQTT + API scenarios)
+- ✅ **Security Audit** - npm audit + Trivy Docker scanning
+- ✅ **Automated Backups** - Denné zálohy cez GitHub Actions
+
+### Security (LAN-optimized)
+- ✅ **MQTT ACL** - Topic-level permissions (admin/nodered/ui/monitor roles)
+- ✅ **UI Authentication** - Basic Auth + session cookies (24h TTL)
+- ✅ **Network Hardening** - UFW firewall, LAN-only access
+
+👉 **[Kompletná dokumentácia →](./docs/PRODUCTION_READINESS.md)**
+
+---
+
 ## 🏗️ Architektúra
 
 ### Komponenty

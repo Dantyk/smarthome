@@ -1,0 +1,100 @@
+global:
+  resolve_timeout: 5m
+  
+  # Discord webhook (optional - set via environment variable)
+  discord_webhook_url: ${DISCORD_WEBHOOK_URL}
+
+# Alert routing
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'component']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 3h
+  
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical'
+      group_wait: 0s
+      repeat_interval: 10m
+    
+    # Warning alerts - batched
+    - match:
+        severity: warning
+      receiver: 'warning'
+      group_wait: 30s
+      repeat_interval: 1h
+    
+    # Info alerts - daily digest
+    - match:
+        severity: info
+      receiver: 'info'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Receivers
+receivers:
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+  
+  - name: 'critical'
+    discord_configs:
+      - webhook_url: '${DISCORD_WEBHOOK_URL}'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        message: |
+          **Alert:** {{ .GroupLabels.alertname }}
+          **Severity:** {{ .CommonLabels.severity }}
+          **Component:** {{ .CommonLabels.component }}
+          
+          {{ range .Alerts }}
+          **Description:** {{ .Annotations.description }}
+          **Action:** {{ .Annotations.action }}
+          {{ end }}
+    
+    # Email configuration (optional)
+    # email_configs:
+    #   - to: 'admin@example.com'
+    #     from: 'alertmanager@smarthome.local'
+    #     smarthost: 'smtp.gmail.com:587'
+    #     auth_username: 'alerts@example.com'
+    #     auth_password: '${SMTP_PASSWORD}'
+    #     headers:
+    #       Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+  
+  - name: 'warning'
+    discord_configs:
+      - webhook_url: '${DISCORD_WEBHOOK_URL}'
+        title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+        message: |
+          **Alert:** {{ .GroupLabels.alertname }}
+          **Component:** {{ .CommonLabels.component }}
+          
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          {{ end }}
+  
+  - name: 'info'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/info'
+        send_resolved: false
+
+# Inhibition rules (prevent alert spam)
+inhibit_rules:
+  # If service is down, don't alert on performance issues
+  - source_match:
+      severity: 'critical'
+      alertname: 'ServiceDown'
+    target_match:
+      severity: 'warning'
+    equal: ['job']
+  
+  # If circuit breaker is open, don't alert on retries
+  - source_match:
+      alertname: 'CircuitBreakerOpen'
+    target_match:
+      alertname: 'HighRetryRate'
+    equal: ['component']

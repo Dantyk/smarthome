@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "bookstack": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/home/pi/mcp-bookstack/dist/index.js"],
+      "envFile": "/home/pi/.config/mcp/bookstack.env"
+    }
+  }
+}

@@ -1,4 +1,5 @@
-import mqtt, { MqttClient } from 'mqtt';
+import mqtt, { MqttClient, IClientPublishOptions } from 'mqtt';
+import { logger } from './logger';
 
 let client: MqttClient | null = null;
 let refCount = 0;
@@ -8,21 +9,20 @@ let globalHandlers: Map<string, Set<(t: string, m: Uint8Array) => void>> = new M
 export function getMqtt() {
   // Only initialize in browser
   if (typeof window === 'undefined') {
-    console.log('[MQTT] Skipping - not in browser');
+    logger.debug('MQTT: Skipping - not in browser');
     return null as any;
   }
   
   if (client) {
     refCount++;
-    console.log('[MQTT] Reusing existing connection (refCount:', refCount, ')');
+    logger.debug('MQTT: Reusing existing connection', { refCount });
     return client;
   }
   
   // Use hardcoded localhost for testing, then switch to dynamic
   const wsUrl = `ws://${window.location.hostname}:9001`;
   
-  console.log('[MQTT] Initializing NEW connection');
-  console.log('[MQTT] WebSocket URL:', wsUrl);
+  logger.info('MQTT: Initializing NEW connection', { wsUrl });
   
   client = mqtt.connect(wsUrl, {
     reconnectPeriod: 1500,
@@ -40,7 +40,7 @@ export function getMqtt() {
           try {
             cb(topic, message);
           } catch (err) {
-            console.error('[MQTT] Handler error:', err);
+            logger.error('MQTT: Handler error', { topic, error: err instanceof Error ? err.message : String(err) });
           }
         }
       }
@@ -48,26 +48,27 @@ export function getMqtt() {
   });
 
   client.on('connect', () => {
-    console.log('[MQTT] ✓ Connected to MQTT broker');
     const now = Date.now();
     const wasDownFor = lastDisconnectAt ? now - lastDisconnectAt : 0;
+    logger.info('MQTT: Connected to broker', { wasDownFor });
+    
     // Notify listeners in the app about status
     try { window.dispatchEvent(new CustomEvent('mqtt:status', { detail: { status: 'connect', wasDownFor } })); } catch {}
     lastDisconnectAt = null;
   });
 
   client.on('error', (err) => {
-    console.error('[MQTT] Connection error:', err.message);
+    logger.error('MQTT: Connection error', { error: err.message });
   });
 
   client.on('close', () => {
-    console.log('[MQTT] Disconnected');
     lastDisconnectAt = Date.now();
+    logger.warn('MQTT: Disconnected');
     try { window.dispatchEvent(new CustomEvent('mqtt:status', { detail: { status: 'close' } })); } catch {}
   });
 
   client.on('reconnect', () => {
-    console.log('[MQTT] Attempting to reconnect...');
+    logger.info('MQTT: Attempting to reconnect');
     try { window.dispatchEvent(new CustomEvent('mqtt:status', { detail: { status: 'reconnect' } })); } catch {}
   });
 
@@ -77,9 +78,9 @@ export function getMqtt() {
 export function releaseMqtt() {
   if (!client) return;
   refCount--;
-  console.log('[MQTT] Released connection (refCount:', refCount, ')');
+  logger.debug('MQTT: Released connection', { refCount });
   if (refCount <= 0) {
-    console.log('[MQTT] Closing connection');
+    logger.info('MQTT: Closing connection');
     client.end();
     client = null;
     refCount = 0;
@@ -110,7 +111,7 @@ function topicMatches(filter: string, topic: string): boolean {
 export function subscribe(topic: string, cb: (t: string, m: Uint8Array) => void) {
   const c = getMqtt();
   if (!c) {
-    console.log('[MQTT] Subscribe skipped - not in browser');
+    logger.debug('MQTT: Subscribe skipped - not in browser');
     return () => {};
   }
   
@@ -119,8 +120,11 @@ export function subscribe(topic: string, cb: (t: string, m: Uint8Array) => void)
     globalHandlers.set(topic, new Set());
     // Only subscribe to MQTT broker once per unique topic filter
     c.subscribe(topic, (err) => {
-      if (err) console.error(`[MQTT] Subscribe error (${topic}):`, err);
-      else console.log(`[MQTT] Subscribed to: ${topic}`);
+      if (err) {
+        logger.error('MQTT: Subscribe error', { topic, error: err.message });
+      } else {
+        logger.info('MQTT: Subscribed', { topic });
+      }
     });
   }
   
@@ -139,13 +143,23 @@ export function subscribe(topic: string, cb: (t: string, m: Uint8Array) => void)
   };
 }
 
-export function publish(topic: string, payload: string | object, retain = false) {
+export function publish(
+  topic: string, 
+  payload: string | object, 
+  options?: { retain?: boolean; qos?: 0 | 1 | 2 }
+) {
   const c = getMqtt();
   if (!c) {
-    console.log('[MQTT] Publish skipped - not in browser');
+    logger.debug('MQTT: Publish skipped - not in browser');
     return;
   }
+  
   const data = typeof payload === 'string' ? payload : JSON.stringify(payload);
-  console.log(`[MQTT] Publishing: ${topic}`, data, `(retain=${retain})`);
-  c.publish(topic, data, { retain });
+  const publishOpts: IClientPublishOptions = {
+    retain: options?.retain ?? false,
+    qos: options?.qos ?? 1
+  };
+  
+  logger.debug('MQTT: Publishing', { topic, payload: data, ...publishOpts });
+  c.publish(topic, data, publishOpts);
 }
