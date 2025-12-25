@@ -49,7 +49,8 @@ class RedisCache {
       
       if (this.enabled) {
         if (ttlSeconds) {
-          await this.redis.setex(key, ttlSeconds, serialized);
+          // Redis v4+ uses setEx instead of setex
+          await this.redis.setEx(key, ttlSeconds, serialized);
         } else {
           await this.redis.set(key, serialized);
         }
