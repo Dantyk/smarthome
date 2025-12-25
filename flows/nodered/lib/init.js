@@ -162,6 +162,17 @@ module.exports = function(RED) {
   global.logger = logger;
   global.metrics = getMetricsCollector();
   
+  // Also expose via functionGlobalContext for function nodes
+  if (RED && RED.settings) {
+    if (!RED.settings.functionGlobalContext) {
+      RED.settings.functionGlobalContext = {};
+    }
+    RED.settings.functionGlobalContext.cache = global.cache;
+    RED.settings.functionGlobalContext.logger = global.logger;
+    RED.settings.functionGlobalContext.metrics = global.metrics;
+    logger.info('Exposed cache/logger/metrics to functionGlobalContext');
+  }
+  
   // Expose cache stats via metrics
   setInterval(() => {
     if (global.cache && global.metrics) {
