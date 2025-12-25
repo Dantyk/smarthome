@@ -10,7 +10,20 @@ module.exports = {
   },
   
   // Enable function external modules
-  functionExternalModules: true
+  functionExternalModules: true,
+  
+  // Expose SmartHome globals to function nodes via lazy getter
+  functionGlobalContext: {
+    getCache: function() {
+      return global.cache || null;
+    },
+    getLogger: function() {
+      return global.logger || null;
+    },
+    getMetrics: function() {
+      return global.metrics || null;
+    }
+  }
 }
 
 
