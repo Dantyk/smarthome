@@ -4387,30 +4387,21 @@
     "y": 80,
     "wires": [
       [
-        "init_exec"
+        "init_smarthome"
       ]
     ]
   },
   {
-    "id": "init_exec",
-    "type": "exec",
+    "id": "init_smarthome",
+    "type": "smarthome-init",
     "z": "tab_init",
-    "command": "/usr/local/bin/node /data/init-wrapper.js",
-    "addpay": "",
-    "append": "",
-    "useSpawn": "false",
-    "timer": "10",
-    "winHide": false,
-    "oldrc": false,
-    "name": "Execute init-wrapper",
+    "name": "Initialize SmartHome",
     "x": 400,
     "y": 80,
     "wires": [
       [
         "init_debug"
-      ],
-      [],
-      []
+      ]
     ]
   },
   {

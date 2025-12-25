@@ -40,7 +40,6 @@ services:
     volumes:
       - ../flows/nodered:/data
       - ./config/nodered/settings.js:/data/settings.js:ro
-      - ./scripts/nodered-init.sh:/init/nodered-init.sh:ro
       - ../config:/config:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
