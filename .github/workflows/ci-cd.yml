@@ -44,13 +44,16 @@ jobs:
         working-directory: tests
         run: npm run test
       
-      - name: Upload coverage
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: always()
+        if: always() && github.event_name == 'push' && secrets.CODECOV_TOKEN != ''
+        continue-on-error: true
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./tests/coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
+          fail_ci_if_error: false
 
   docker-build:
     name: Docker Build & Validate
