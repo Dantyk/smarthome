@@ -9,6 +9,14 @@ module.exports = {
     '/e2e/',
     '.spec.ts$'
   ],
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true
+      }
+    }]
+  },
   collectCoverageFrom: [
     '../ui/smarthome-ui/src/lib/commands.ts',
     '../ui/smarthome-ui/src/lib/logger.ts',
