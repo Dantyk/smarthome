@@ -1,8 +1,5 @@
 global:
   resolve_timeout: 5m
-  
-  # Discord webhook (optional - set via environment variable)
-  discord_webhook_url: ${DISCORD_WEBHOOK_URL}
 
 # Alert routing
 route:
@@ -42,40 +39,14 @@ receivers:
         send_resolved: true
   
   - name: 'critical'
-    discord_configs:
-      - webhook_url: '${DISCORD_WEBHOOK_URL}'
-        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
-        message: |
-          **Alert:** {{ .GroupLabels.alertname }}
-          **Severity:** {{ .CommonLabels.severity }}
-          **Component:** {{ .CommonLabels.component }}
-          
-          {{ range .Alerts }}
-          **Description:** {{ .Annotations.description }}
-          **Action:** {{ .Annotations.action }}
-          {{ end }}
-    
-    # Email configuration (optional)
-    # email_configs:
-    #   - to: 'admin@example.com'
-    #     from: 'alertmanager@smarthome.local'
-    #     smarthost: 'smtp.gmail.com:587'
-    #     auth_username: 'alerts@example.com'
-    #     auth_password: '${SMTP_PASSWORD}'
-    #     headers:
-    #       Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/critical'
+        send_resolved: true
   
   - name: 'warning'
-    discord_configs:
-      - webhook_url: '${DISCORD_WEBHOOK_URL}'
-        title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
-        message: |
-          **Alert:** {{ .GroupLabels.alertname }}
-          **Component:** {{ .CommonLabels.component }}
-          
-          {{ range .Alerts }}
-          {{ .Annotations.description }}
-          {{ end }}
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook/warning'
+        send_resolved: true
   
   - name: 'info'
     webhook_configs:

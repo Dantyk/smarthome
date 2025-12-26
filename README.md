@@ -1,5 +1,9 @@
 # SmartHome - Inteligentný Systém Riadenia Vykurovania
 
+![CI/CD](https://github.com/Dantyk/smarthome/workflows/CI%2FCD/badge.svg)
+![Unit Tests](https://img.shields.io/badge/unit%20tests-18%20passing-success)
+![Integration Tests](https://img.shields.io/badge/integration-22%20passing-success)
+
 Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teploty, režimami a kalendárovým ovládaním.
 
 ## 📚 Dokumentácia
