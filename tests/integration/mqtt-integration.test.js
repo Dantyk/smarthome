@@ -21,8 +21,19 @@ describe('MQTT Integration Tests', function() {
       clean: true
     });
     
-    client.on('connect', () => done());
-    client.on('error', done);
+    let connected = false;
+    client.on('connect', () => {
+      if (!connected) {
+        connected = true;
+        done();
+      }
+    });
+    client.on('error', (err) => {
+      if (!connected) {
+        connected = true;
+        done(err);
+      }
+    });
   });
   
   afterEach((done) => {
@@ -128,7 +139,10 @@ describe('MQTT Integration Tests', function() {
       
       // Publish retained message
       client.publish(topic, payload, { retain: true }, (err) => {
-        expect(err).to.be.null;
+        if (err) {
+          done(err);
+          return;
+        }
         
         // Create new client to test retained
         const client2 = mqtt.connect(MQTT_BROKER, {
@@ -137,20 +151,28 @@ describe('MQTT Integration Tests', function() {
         
         client2.on('connect', () => {
           client2.subscribe(topic, (err) => {
-            expect(err).to.be.null;
+            if (err) {
+              client2.end();
+              done(err);
+            }
           });
           
           client2.on('message', (receivedTopic, message, packet) => {
             if (receivedTopic === topic) {
-              expect(message.toString()).to.equal(payload);
-              expect(packet.retain).to.be.true;
-              
-              client2.end();
-              
-              // Clean up retained message
-              client.publish(topic, '', { retain: true }, () => {
-                done();
-              });
+              try {
+                expect(message.toString()).to.equal(payload);
+                expect(packet.retain).to.be.true;
+                
+                client2.end();
+                
+                // Clean up retained message
+                client.publish(topic, '', { retain: true }, () => {
+                  done();
+                });
+              } catch (error) {
+                client2.end();
+                done(error);
+              }
             }
           });
         });

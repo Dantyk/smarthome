@@ -6,8 +6,8 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "test:mqtt": "node mqtt-integration.test.js",
-    "test:api": "node api-contract.test.js",
+    "test:mqtt": "mocha mqtt-integration.test.js --timeout 10000",
+    "test:api": "mocha api-contract.test.js --timeout 5000",
     "test:all": "npm run test && npm run test:mqtt && npm run test:api"
   },
   "keywords": ["testing", "integration", "e2e"],
