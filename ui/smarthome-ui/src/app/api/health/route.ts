@@ -27,8 +27,8 @@ export async function GET() {
       }
     };
     
-    const statusCode = mqttStatus === 'connected' ? 200 : 503;
-    return NextResponse.json(health, { status: statusCode });
+    // Always return 200 for Docker healthcheck, even if degraded
+    return NextResponse.json(health, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { 

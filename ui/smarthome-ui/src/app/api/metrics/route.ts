@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
+import { metrics } from '@/lib/metrics';
 
 /**
  * Prometheus Metrics Endpoint pre UI
  * 
  * Exportuje metriky v Prometheus formáte.
  */
-
-let metrics = {
-  startTime: Date.now(),
-  httpRequests: 0,
-  mqttMessages: 0,
-  mqttErrors: 0,
-  apiErrors: 0
-};
 
 export async function GET() {
   const uptime = (Date.now() - metrics.startTime) / 1000;
@@ -44,21 +37,4 @@ smarthome_ui_api_errors_total ${metrics.apiErrors}
       'Content-Type': 'text/plain; version=0.0.4'
     }
   });
-}
-
-// Increment counters (called from other parts of the app)
-export function incHttpRequests() {
-  metrics.httpRequests++;
-}
-
-export function incMqttMessages() {
-  metrics.mqttMessages++;
-}
-
-export function incMqttErrors() {
-  metrics.mqttErrors++;
-}
-
-export function incApiErrors() {
-  metrics.apiErrors++;
 }

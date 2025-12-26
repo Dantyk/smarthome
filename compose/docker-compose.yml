@@ -163,8 +163,9 @@ services:
     environment:
       - NODE_ENV=production
       - MQTT_BROKER_URL=ws://mosquitto:9001
+      - HOSTNAME=0.0.0.0
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
