@@ -27,7 +27,8 @@ describe('Command Publisher', () => {
           source: 'ui',
           trace_id: expect.any(String),
           timestamp: expect.any(String),
-        })
+        }),
+        expect.any(Object) // MQTT options (qos)
       );
     });
 
@@ -48,13 +49,13 @@ describe('Command Publisher', () => {
     it('should publish HVAC enable command', () => {
       setRoomHvacEnabled({ room: 'detska', enabled: true });
       
-      expect(publish).toHaveBeenCalledWith('virt/room/detska/enabled', 'true');
+      expect(publish).toHaveBeenCalledWith('virt/room/detska/enabled', 'true', expect.any(Object));
     });
 
     it('should publish HVAC disable command', () => {
       setRoomHvacEnabled({ room: 'detska', enabled: false });
       
-      expect(publish).toHaveBeenCalledWith('virt/room/detska/enabled', 'false');
+      expect(publish).toHaveBeenCalledWith('virt/room/detska/enabled', 'false', expect.any(Object));
     });
   });
 
@@ -62,8 +63,8 @@ describe('Command Publisher', () => {
     it('should publish boost commands', () => {
       startRoomBoost({ room: 'obyvacka', minutes: 120, targetTemp: 24 });
       
-      expect(publish).toHaveBeenCalledWith('virt/boost/obyvacka/minutes', '120');
-      expect(publish).toHaveBeenCalledWith('virt/boost/obyvacka/target_temp', '24');
+      expect(publish).toHaveBeenCalledWith('virt/boost/obyvacka/minutes', '120', expect.any(Object));
+      expect(publish).toHaveBeenCalledWith('virt/boost/obyvacka/target_temp', '24', expect.any(Object));
     });
 
     it('should reject invalid duration', () => {
