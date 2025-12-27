@@ -25,13 +25,21 @@ jobs:
         with:
           node-version: '20'
       
+      - name: Install UI dependencies
+        working-directory: ui/smarthome-ui
+        run: npm ci
+      
       - name: Audit UI dependencies
         working-directory: ui/smarthome-ui
         run: |
           npm audit --audit-level=high
       
+      - name: Install test dependencies
+        working-directory: tests/integration
+        run: npm ci
+      
       - name: Audit test dependencies
-        working-directory: tests
+        working-directory: tests/integration
         run: |
           npm audit --audit-level=high
 
