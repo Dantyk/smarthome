@@ -7,6 +7,10 @@ on:
     # Run daily at 2 AM
     - cron: '0 2 * * *'
 
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   security-events: write
