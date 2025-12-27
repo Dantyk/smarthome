@@ -158,6 +158,34 @@ Baïkal CalDAV ───┘         │
    - **Grafana**: `http://localhost:3000` (ak zapnutý profil `metrics`)
    - **InfluxDB**: `http://localhost:8086` (ak zapnutý profil `metrics`)
 
+## 🔐 GitHub Actions - CI/CD Secrets
+
+Pre automatický deploy do produkcie (via GitHub Actions) je potrebné nastaviť tieto **repository secrets**:
+
+**Postup:**
+1. Choď na GitHub: `Settings` → `Secrets and variables` → `Actions`
+2. Klikni `New repository secret`
+3. Pridaj nasledujúce secrets:
+
+| Secret Name | Popis | Príklad |
+|------------|-------|---------|
+| `DEPLOY_SSH_KEY` | SSH private key pre prístup na produkčný server | `-----BEGIN OPENSSH PRIVATE KEY-----\n...` |
+| `DEPLOY_HOST` | IP alebo hostname produkčného servera | `192.168.1.100` alebo `smarthome.local` |
+| `DEPLOY_USER` | SSH username na produkčnom serveri | `pi` |
+| `OPENWEATHER_API_KEY` | OpenWeatherMap API kľúč (voliteľné) | `abc123def456...` |
+
+**Generovanie SSH kľúča:**
+```bash
+# Na svojom počítači
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/smarthome_deploy
+# Public key skopíruj na produkčný server
+ssh-copy-id -i ~/.ssh/smarthome_deploy.pub pi@192.168.1.100
+# Private key (__bez__ .pub) vlož do DEPLOY_SSH_KEY secretu
+cat ~/.ssh/smarthome_deploy
+```
+
+**Poznámka:** Deploy job sa automaticky preskočí, ak `DEPLOY_SSH_KEY` nie je nastavený.
+
 ## ⚙️ Konfigurácia
 
 ### Režimy (`/config/modes.yaml`)
