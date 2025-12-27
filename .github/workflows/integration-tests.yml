@@ -74,9 +74,17 @@ jobs:
       
       - name: Check service health
         run: |
+          echo "📋 Container status:"
           docker ps
-          docker compose logs mosquitto
-          docker compose logs redis
+          echo ""
+          echo "📂 Mosquitto config files:"
+          docker compose exec -T mosquitto ls -la /mosquitto/config/ || true
+          echo ""
+          echo "📋 Mosquitto logs:"
+          docker compose logs mosquitto | tail -30
+          echo ""
+          echo "📋 Redis logs:"
+          docker compose logs redis | tail -20
       
       - name: Install test dependencies
         run: |
