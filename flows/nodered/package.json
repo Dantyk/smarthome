@@ -8,7 +8,7 @@
     "chokidar": "^3.5.3",
     "js-yaml": "^4.1.0",
     "node-red-contrib-cron-plus": "^2",
-    "node-red-contrib-ical-events": "~2.2.5",
+    "node-red-contrib-ical-events": "2.2.5",
     "node-red-contrib-influxdb": "^0.7.0",
     "node-red-dashboard": "^3",
     "node-red-node-email": "~5.0.0",
