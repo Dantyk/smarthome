@@ -124,7 +124,7 @@ cat > "$BACKUP_DIR/manifest.json" << EOF
 $(find "$BACKUP_DIR" -type f -not -name "manifest.json" | sed 's|'"$BACKUP_DIR"'/||' | sed 's/.*/"    &"/' | paste -sd ',' -)
   ],
   "version": "1.0",
-  "checksum": "$(find "$BACKUP_DIR" -type f -not -name "manifest.json" -exec md5sum {} \; | md5sum | cut -d' ' -f1)"
+  "checksum": "$(find "$BACKUP_DIR" -type f -not -name "manifest.json" | sort | xargs cat | md5sum | cut -d' ' -f1)"
 }
 EOF
 

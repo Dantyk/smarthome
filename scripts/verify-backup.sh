@@ -70,9 +70,9 @@ if [ -f "$BACKUP_DIR/manifest.json" ]; then
     echo "  Timestamp: $TIMESTAMP"
     echo "  Version:   $VERSION"
     
-    # Verify checksum
+    # Verify checksum (sort files for consistent ordering)
     STORED_CHECKSUM=$(jq -r '.checksum' "$BACKUP_DIR/manifest.json" 2>/dev/null)
-    CURRENT_CHECKSUM=$(find "$BACKUP_DIR" -type f -not -name "manifest.json" -exec md5sum {} \; | md5sum | cut -d' ' -f1)
+    CURRENT_CHECKSUM=$(find "$BACKUP_DIR" -type f -not -name "manifest.json" | sort | xargs cat | md5sum | cut -d' ' -f1)
     
     if [ "$STORED_CHECKSUM" = "$CURRENT_CHECKSUM" ]; then
         log_info "Checksum verification passed"
@@ -101,8 +101,8 @@ check_file() {
 }
 
 CRITICAL_FILES=0
-check_file "modes.yaml" && ((CRITICAL_FILES++))
-check_file "flows.json" && ((CRITICAL_FILES++))
+check_file "modes.yaml" && CRITICAL_FILES=$((CRITICAL_FILES + 1))
+check_file "flows.json" && CRITICAL_FILES=$((CRITICAL_FILES + 1))
 
 if [ $CRITICAL_FILES -eq 0 ]; then
     log_error "No critical files found in backup"
