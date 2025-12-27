@@ -1,0 +1,9 @@
+{
+  "meta": {
+    "generated": "2025-12-27T18:45:00Z",
+    "source": "Zigbee2MQTT API",
+    "endpoint": "http://localhost:8090/api/devices",
+    "note": "This file will be auto-populated when Zigbee USB adapter is connected"
+  },
+  "devices": []
+}

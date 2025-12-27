@@ -98,6 +98,11 @@ jobs:
           npm install -g ajv-cli
           ajv validate -s config/mqtt-schemas.json --valid || echo "Schema validation test"
       
+      - name: Validate modes.yaml config
+        run: |
+          pip install jsonschema pyyaml
+          python3 scripts/validate-modes-config.py
+      
       - name: Cleanup
         if: always()
         run: |
