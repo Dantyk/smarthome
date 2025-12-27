@@ -8,22 +8,22 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
-    "next": "14.2.5",
+    "@tanstack/react-query": "^5.51.1",
+    "ajv": "^8.17.1",
+    "js-yaml": "^4.1.0",
+    "mqtt": "^5.3.5",
+    "next": "^14.2.35",
+    "node-ical": "^0.22.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "mqtt": "^5.3.5",
-    "@tanstack/react-query": "^5.51.1",
-    "zustand": "^4.5.2",
-    "js-yaml": "^4.1.0",
     "zod": "^3.22.4",
-    "ajv": "^8.17.1",
-    "node-ical": "^0.19.0"
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "typescript": "^5.5.3",
-    "@types/js-yaml": "^4.0.9"
+    "typescript": "^5.5.3"
   }
 }
