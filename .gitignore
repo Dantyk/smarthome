@@ -44,6 +44,7 @@ compose/config/zigbee2mqtt/*.backup*
 backups/
 security-reports/
 tests/load/results/
+tests/coverage/
 load-test-*.json
 load-test-*.html
 
