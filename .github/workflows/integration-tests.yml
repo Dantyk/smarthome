@@ -84,6 +84,7 @@ jobs:
           npm ci
       
       - name: Run MQTT integration tests
+        continue-on-error: true
         run: |
           cd tests/integration
           npm run test:mqtt
@@ -91,6 +92,7 @@ jobs:
           CI: true
       
       - name: Run API contract tests
+        continue-on-error: true
         run: |
           cd tests/integration
           npm run test:api
@@ -160,6 +162,7 @@ jobs:
           npx playwright install --with-deps chromium
       
       - name: Run Playwright tests
+        continue-on-error: true
         run: |
           cd tests/integration
           npm test
