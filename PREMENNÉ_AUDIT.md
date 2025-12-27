@@ -67,7 +67,20 @@ msg.payload = {
 #### C) `flow.get('current_overrides')` 
 
 **Použitie:** Riadky 1571, 1607  
-**Status:** ❓ Nie je jasné, kto nastavuje túto premennú. Pravdepodobne nepoužívané.
+**Status:** ❌ **NIKDY NENASTAVENÉ** - Premenná sa nikde nenastavuje cez `flow.set()`  
+**Riešenie:** Buď implementovať nastavovanie, alebo odstrániť z API response
+
+#### D) `flow.get('lock_main_state')`
+
+**Použitie:** Riadok 1031 (security alerts)  
+**Status:** ❌ **NIKDY NENASTAVENÉ** - Premenná sa nikde nenastavuje  
+**Riešenie:** Implementovať flow pre lock_main_state alebo odstrániť kontrolu
+
+#### E) `flow.get('service_mosquitto_online')` / `flow.get('service_baikal_online')`
+
+**Použitie:** Riadok 1571 (API status)  
+**Status:** ❌ **NIKDY NENASTAVENÉ** - Služby sa nemonitorujú  
+**Riešenie:** Implementovať healthcheck flow alebo vrátiť `null` namiesto `false`
 
 ### ✅ SPRÁVNE POUŽITÉ
 
