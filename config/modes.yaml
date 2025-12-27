@@ -1,3 +1,4 @@
+---
 version: 3
 
 # Zoznam miestností
@@ -126,14 +127,14 @@ modes:
       dow: [sat, sun]
     room_regime:
       "*": VIKEND
-  
+
   pracovny_den:
     priority: 30
     activation:
       dow: [mon, tue, wed, thu, fri]
     room_regime:
       "*": PRACOVNY_DEN
-  
+
   navsteva:
     priority: 60
     activation:
@@ -157,7 +158,7 @@ weather:
     default_pivot_temp_c: 12  # Referenčná vonkajšia teplota
     min_offset: -3.0          # Maximálne zníženie cieľovej teploty
     max_offset: 2.0           # Maximálne zvýšenie cieľovej teploty
-    
+
     rooms:
       spalna:
         kT: -0.08             # Colder outside = more heating (NEGATIVE!)
@@ -173,7 +174,7 @@ weather:
           SW: -0.3
           W: 0.0
           NW: 0.4
-      
+
       detska:
         kT: -0.08
         kW: -0.025
@@ -188,7 +189,7 @@ weather:
           SW: -0.4
           W: -0.1
           NW: 0.3
-      
+
       obyvacka:
         kT: -0.07
         kW: -0.02
@@ -203,7 +204,7 @@ weather:
           SW: -0.2
           W: 0.1
           NW: 0.3
-      
+
       kuchyna:
         kT: -0.06
         kW: -0.02
@@ -218,7 +219,7 @@ weather:
           SW: -0.2
           W: 0.0
           NW: 0.2
-      
+
       kupelna:
         kT: -0.05
         kW: -0.01
