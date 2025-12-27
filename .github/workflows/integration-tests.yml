@@ -44,7 +44,7 @@ jobs:
       - name: Wait for services
         run: |
           echo "Waiting for Mosquitto..."
-          timeout 60 bash -c 'until docker exec $(docker ps -qf name=mosquitto) mosquitto_sub -t "$$SYS/#" -C 1 -W 3; do sleep 2; done'
+          timeout 60 bash -c 'until docker exec $(docker ps -qf name=mosquitto) nc -z localhost 1883; do sleep 2; done'
           
           echo "Waiting for Redis..."
           timeout 60 bash -c 'until docker exec $(docker ps -qf name=redis) redis-cli ping | grep -q PONG; do sleep 2; done'
