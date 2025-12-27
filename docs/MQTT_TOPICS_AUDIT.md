@@ -199,19 +199,26 @@ virt/weather/hourly
 
 ## 🔧 AKČNÝ PLÁN
 
+**Stav auditu:** ✅ Dokončený (27.12.2025)  
+**Nájdených problémov:** 51 orphaned topics  
+**Status:** Dokumentované, čakajú na rozhodnutie/implementáciu
+
 ### Priorita VYSOKÁ:
 
-1. **Overiť CMD topics:**
+1. **[ ] Overiť CMD topics:**
    - Skontroluj `mosquitto_sub -v -t 'cmd/hvac/#'`
    - Ak nie sú TRV ventily pripojené → vymazať publish
    - Ak sú → pridať dokumentáciu
+   - **Status:** Čaká na overenie hardvéru
 
-2. **Opraviť `internal/recalc_mode`:**
+2. **[ ] Opraviť `internal/recalc_mode`:**
    - Implementovať subscriber alebo vymazať publish
+   - **Status:** Čaká na rozhodnutie
 
-3. **Overiť `internal/notify/*`:**
+3. **[ ] Overiť `internal/notify/*`:**
    - Ak sa používa Apprise HTTP → dokumentovať
    - Ak MQTT → implementovať subscribers
+   - **Status:** Pravdepodobne používa HTTP, potrebné overiť
 
 ### Priorita STREDNÁ:
 

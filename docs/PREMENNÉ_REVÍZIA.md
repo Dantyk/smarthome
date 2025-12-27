@@ -96,7 +96,7 @@
 
 ### Priorita STREDNÁ (UX):
 - [ ] **Opraviť `current_overrides`** - použiť `override_map`
-- [ ] **Opraviť `service_*_online`** - zmeniť na `null` alebo implementovať healthcheck
+- [x] **Opraviť `service_*_online`** - zmeniť na `null` alebo implementovať healthcheck *(HOTOVO: commit 3c9eda7)*
 
 ### Priorita NÍZKA (cleanup):
 - [ ] Odstrániť `lock_main_state` kontrolu (ak nemáš smart lock)

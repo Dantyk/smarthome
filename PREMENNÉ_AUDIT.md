@@ -167,17 +167,18 @@ msg.payload = {
 ## 4. Odporúčania
 
 ### Priorita VYSOKÁ:
-1. ✅ **Opraviť `/api/mode` GET handler** - použiť `global.get('activeMode')` alebo vypočítať z regimes
-2. ❌ **Pridať `NR_CRED_SECRET` do docker-compose.yml**
-3. ❌ **Vytvoriť `.env.example`** s dokumentáciou všetkých potrebných premenných
+1. ✅ **Opraviť `/api/mode` GET handler** - použiť `global.get('activeMode')` alebo vypočítať z regimes *(HOTOVO: commit 068cdc1)*
+2. ✅ **Pridať `NR_CRED_SECRET` do docker-compose.yml** *(HOTOVO: commit 068cdc1)*
+3. ✅ **Vytvoriť `.env.example`** s dokumentáciou všetkých potrebných premenných *(HOTOVO: aktualizovaný)*
 
 ### Priorita STREDNÁ:
-4. ⚠️ **Štandardizovať BOOST context** - používať buď `flow` alebo `global` (nie oba)
-5. ⚠️ **Vyčistiť `flow.get('current_overrides')`** - ak sa nepoužíva, odstrániť
-6. ⚠️ **Rozhodnúť medzi `modes` a `modesCfg`** - deprecate jeden z nich
+4. ⚠️ **Štandardizovať BOOST context** - používať buď `flow` alebo `global` (nie oba) *(TODO)*
+5. ⚠️ **Vyčistiť `flow.get('current_overrides')`** - ak sa nepoužíva, odstrániť *(TODO)*
+6. ⚠️ **Rozhodnúť medzi `modes` a `modesCfg`** - deprecate jeden z nich *(TODO)*
 
 ### Priorita NÍZKA:
-7. 📝 **Dokumentovať všetky global/flow premenné** v README
+7. ✅ **Dokumentovať všetky global/flow premenné** v README *(HOTOVO: PREMENNÉ_AUDIT.md, PREMENNÉ_REVÍZIA.md)*
+8. ✅ **MQTT topics audit** *(HOTOVO: MQTT_TOPICS_AUDIT.md, commit 17a0c3a)*
 8. 📝 **MQTT topics diagram** - vizualizácia publish/subscribe
 
 ---
