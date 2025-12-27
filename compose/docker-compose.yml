@@ -23,15 +23,16 @@ services:
         condition: service_healthy
     environment:
       - TZ=Europe/Bratislava
+      - NR_CRED_SECRET=${NR_CRED_SECRET:-change-me-in-production}
       - BAIKAL_BASE_URL=http://baikal:80/dav.php
       - BAIKAL_USER=smarthome
       - BAIKAL_PASS=smarthome
       - BAIKAL_CAL_ID=default
-      - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID}
-      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
-      - PUSHOVER_USER=${PUSHOVER_USER}
-      - PUSHOVER_TOKEN=${PUSHOVER_TOKEN}
+      - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID:-}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
+      - PUSHOVER_USER=${PUSHOVER_USER:-}
+      - PUSHOVER_TOKEN=${PUSHOVER_TOKEN:-}
       - LOG_LEVEL=info
       - MQTT_USER=${MQTT_USER:-nodered}
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}

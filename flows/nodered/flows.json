@@ -1604,7 +1604,7 @@
     "type": "function",
     "z": "tab_api",
     "name": "Mode GET Handler",
-    "func": "const modes = global.get('modes');\n\nmsg.payload = {\n    current: flow.get('current_mode') || 'work',\n    overrides: flow.get('current_overrides') || [],\n    available: Object.keys(modes?.events || {}),\n    priority: modes?.event_priority || {}\n};\n\nreturn msg;",
+    "func": "const modesCfg = global.get('modesCfg');\nconst activeRegimes = global.get('activeRegimesByRoom') || {};\n\n// Determine dominant regime\nconst regimeCounts = {};\nObject.values(activeRegimes).forEach(regime => {\n    regimeCounts[regime] = (regimeCounts[regime] || 0) + 1;\n});\nconst dominantRegime = Object.keys(regimeCounts).reduce((a, b) => \n    regimeCounts[a] > regimeCounts[b] ? a : b, 'PRACOVNY_DEN'\n);\n\n// Map regime to mode name\nconst regimeToMode = {\n    'VIKEND': 'vikend',\n    'PRACOVNY_DEN': 'pracovny_den',\n    'PT': 'pt'\n};\nconst currentMode = regimeToMode[dominantRegime] || 'pracovny_den';\n\nmsg.payload = {\n    current: currentMode,\n    overrides: flow.get('current_overrides') || [],\n    available: Object.keys(modesCfg?.modes || {}),\n    regimes: activeRegimes\n};\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
