@@ -195,14 +195,13 @@ jobs:
           EOF
       
       - name: Health check after deploy
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        if: env.DEPLOY_SSH_KEY != ''
         run: |
           sleep 10
           curl -f http://$DEPLOY_HOST:8088/api/health || exit 1
       
       - name: Notify deployment
-        if: always()
+        if: env.DEPLOY_SSH_KEY != '' && always()
         run: |
           echo "Deployment completed: ${{ job.status }}"
           # TODO: Add Slack/Discord/Pushover notification
