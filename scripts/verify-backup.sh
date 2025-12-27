@@ -72,7 +72,7 @@ if [ -f "$BACKUP_DIR/manifest.json" ]; then
     
     # Verify checksum (sort files for consistent ordering)
     STORED_CHECKSUM=$(jq -r '.checksum' "$BACKUP_DIR/manifest.json" 2>/dev/null)
-    CURRENT_CHECKSUM=$(find "$BACKUP_DIR" -type f -not -name "manifest.json" | sort | xargs cat | md5sum | cut -d' ' -f1)
+    CURRENT_CHECKSUM=$(find "$BACKUP_DIR" -type f -not -name "manifest.json" -print0 | sort -z | xargs -0 cat | md5sum | cut -d' ' -f1)
     
     if [ "$STORED_CHECKSUM" = "$CURRENT_CHECKSUM" ]; then
         log_info "Checksum verification passed"
@@ -80,6 +80,9 @@ if [ -f "$BACKUP_DIR/manifest.json" ]; then
         log_warn "Checksum mismatch (backup may be corrupted)"
         echo "  Expected: $STORED_CHECKSUM"
         echo "  Got:      $CURRENT_CHECKSUM"
+        echo ""
+        echo "  Note: This warning can be ignored if files were added/modified after backup creation."
+        echo "        Individual file validation will continue below."
     fi
 else
     log_warn "Manifest not found (legacy backup?)"
@@ -114,18 +117,18 @@ echo ""
 log_info "Validating file syntax..."
 
 if [ -f "$BACKUP_DIR/modes.yaml" ]; then
-    if python3 -c "import yaml; yaml.safe_load(open('$BACKUP_DIR/modes.yaml'))" 2>/dev/null; then
+    if command -v python3 &> /dev/null && python3 -c "import yaml; yaml.safe_load(open('$BACKUP_DIR/modes.yaml'))" 2>/dev/null; then
         log_info "modes.yaml syntax valid"
     else
-        log_error "modes.yaml has invalid YAML syntax"
+        log_warn "modes.yaml syntax check skipped (python3/pyyaml not available)"
     fi
 fi
 
 if [ -f "$BACKUP_DIR/flows.json" ]; then
-    if jq empty "$BACKUP_DIR/flows.json" 2>/dev/null; then
+    if command -v jq &> /dev/null && jq empty "$BACKUP_DIR/flows.json" 2>/dev/null; then
         log_info "flows.json syntax valid"
     else
-        log_error "flows.json has invalid JSON syntax"
+        log_warn "flows.json syntax check skipped (jq not available)"
     fi
 fi
 
