@@ -8,6 +8,14 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   security-audit:
     runs-on: ubuntu-latest
