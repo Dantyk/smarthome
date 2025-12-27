@@ -43,13 +43,34 @@ jobs:
       
       - name: Wait for services
         run: |
-          echo "Waiting for Mosquitto..."
-          timeout 60 bash -c 'until docker exec $(docker ps -qf name=mosquitto) nc -z localhost 1883; do sleep 2; done'
-          
-          echo "Waiting for Redis..."
-          timeout 60 bash -c 'until docker exec $(docker ps -qf name=redis) redis-cli ping | grep -q PONG; do sleep 2; done'
-          
-          echo "Services ready!"
+          echo "Waiting for services with Docker healthchecks..."
+          timeout 90 bash -c '
+            MOSQUITTO_CONTAINER=$(docker ps -qf name=mosquitto)
+            REDIS_CONTAINER=$(docker ps -qf name=redis)
+            
+            until [ "$(docker inspect --format="{{.State.Health.Status}}" $MOSQUITTO_CONTAINER 2>/dev/null)" = "healthy" ]; do
+              echo "Mosquitto status: $(docker inspect --format="{{.State.Health.Status}}" $MOSQUITTO_CONTAINER 2>/dev/null || echo "not running")"
+              sleep 3
+            done
+            echo "✅ Mosquitto healthy"
+            
+            until docker exec $REDIS_CONTAINER redis-cli ping | grep -q PONG 2>/dev/null; do
+              echo "Waiting for Redis..."
+              sleep 3
+            done
+            echo "✅ Redis healthy"
+          ' || {
+            echo "❌ Timeout waiting for services. Container status:"
+            docker compose ps
+            echo ""
+            echo "📋 Mosquitto logs:"
+            docker compose logs mosquitto | tail -50
+            echo ""
+            echo "📋 Redis logs:"
+            docker compose logs redis | tail -50
+            exit 1
+          }
+          echo "✅ All services ready!"
       
       - name: Check service health
         run: |
