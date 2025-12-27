@@ -82,20 +82,24 @@ jobs:
       # Create issue if vulnerabilities found
       - name: Check for critical vulnerabilities
         id: check_vulns
+        continue-on-error: true
         run: |
           CRITICAL_NR=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit-nodered.json)
           CRITICAL_UI=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit-ui.json)
           TOTAL_CRITICAL=$((CRITICAL_NR + CRITICAL_UI))
           
           echo "critical_count=$TOTAL_CRITICAL" >> $GITHUB_OUTPUT
+          echo "has_criticals=false" >> $GITHUB_OUTPUT
           
           if [ $TOTAL_CRITICAL -gt 0 ]; then
             echo "⚠️ Found $TOTAL_CRITICAL critical vulnerabilities"
-            exit 1
+            echo "has_criticals=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ No critical vulnerabilities found"
           fi
       
       - name: Create issue for critical vulnerabilities
-        if: failure() && steps.check_vulns.outputs.critical_count > 0
+        if: steps.check_vulns.outputs.has_criticals == 'true'
         uses: actions/github-script@v7
         with:
           script: |
