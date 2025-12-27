@@ -105,16 +105,62 @@ msg.payload = {
 
 ## 3. MQTT Topics
 
-### Potrebuje kontrolu:
+### ❌ KRITICKÉ PROBLÉMY
 
-Skontrolovať či všetky publikované topics majú subscriber a naopak:
-- `internal/planner/orchestrate`
-- `internal/planner/edges/#`
-- `virt/room/+/target_temp`
-- `virt/room/+/scheduled_temp`
-- `cmd/hvac/+/setpoint`
+**Detailný report:** [docs/MQTT_TOPICS_AUDIT.md](docs/MQTT_TOPICS_AUDIT.md)
 
-**Todo:** Prejsť všetky MQTT publish/subscribe a overiť párovanie
+#### A) CMD Topics - 47 orphaned publishes
+
+**Problém:** Všetky `cmd/hvac/*` topics (enable, override, override_duration, setpoint) sa publikujú ale **žiadny Node-RED flow ich nepočúva**.
+
+**Možné príčiny:**
+1. Externý Mosquitto bridge publikuje do Zigbee2MQTT/Z-Wave
+2. Hardvérové TRV ventily počúvajú priamo MQTT
+3. Legacy topics ktoré už nie sú potrebné
+
+**Riešenie:** Skontrolovať `mosquitto_sub -t 'cmd/hvac/#'` - ak nie sú zariadenia → vymazať
+
+#### B) Internal Notify Topics - 4 orphaned
+
+```
+❌ internal/notify/pushover
+❌ internal/notify/telegram  
+❌ internal/notify/ntfy
+❌ internal/notify/email
+```
+
+**Problém:** Publikujú sa ale žiadny subscriber → notifikácie sa nedoručujú  
+**Riešenie:** Pravdepodobne sa používa Apprise HTTP API → opraviť kód alebo dokumentáciu
+
+#### C) Internal Recalc Mode - orphaned
+
+```
+❌ internal/recalc_mode
+```
+
+**Použitie:** POST `/api/mode` publikuje ale nikto nepočúva  
+**Riešenie:** Implementovať subscriber alebo vymazať
+
+### ⚠️ OČAKÁVANÉ ALE CHÝBAJÚCE PUBLISHERS
+
+```
+⚠️ internal/holidays/check - subscriber existuje, publisher chýba
+⚠️ meta/service/ui/online - Next.js UI nemá MQTT client
+⚠️ stat/sensor/kupelna_humidity/state - Zigbee sensor (pravdepodobne OK)
+⚠️ stat/switch/kupelna_fan/state - Zigbee switch (pravdepodobne OK)
+```
+
+### ✅ SPRÁVNE FUNGUJÚCE
+
+- `internal/planner/orchestrate` → `internal/planner/edges/#` ✅
+- `internal/resolver/trigger` ✅  
+- `virt/room/+/*`, `virt/boost/+/*`, `virt/weather/*` ✅
+
+**Štatistika:**
+- MQTT IN: 23 topics
+- MQTT OUT: 39 base topics (~80+ expandované)
+- Orphaned OUT: 47 topics
+- Orphaned IN: 4 topics
 
 ---
 
