@@ -161,22 +161,26 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [lint-and-test, docker-build]
-    # Deploy only runs on master branch push AND when deploy secrets are available
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && secrets.DEPLOY_SSH_KEY != ''
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    
+    # Store secrets in job env so we can check them in step conditions
+    env:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
       - name: Setup SSH
+        if: env.DEPLOY_SSH_KEY != ''
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
       
       - name: Deploy to Raspberry Pi
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        if: env.DEPLOY_SSH_KEY != ''
         run: |
           ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST << 'EOF'
             cd /home/pi/smarthome
