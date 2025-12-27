@@ -216,9 +216,11 @@ virt/weather/hourly
    - **Status:** Čaká na rozhodnutie
 
 3. **[ ] Overiť `internal/notify/*`:**
-   - Ak sa používa Apprise HTTP → dokumentovať
-   - Ak MQTT → implementovať subscribers
-   - **Status:** Pravdepodobne používa HTTP, potrebné overiť
+   - **UPDATE (27.12.2025):** ✅ VYRIEŠENÉ - Notifikácie fungujú cez **Apprise HTTP API**
+   - MQTT topics `internal/notify/pushover`, `telegram`, `ntfy`, `email` sú **orphaned by design**
+   - Node-RED publikuje pre backward compatibility, ale skutočné notifikácie idú cez HTTP
+   - **Akcia:** Odstrániť MQTT publish z alert split function (nepoužívané)
+   - **Status:** Dokumentované, orphaned topics sú OK
 
 ### Priorita STREDNÁ:
 
