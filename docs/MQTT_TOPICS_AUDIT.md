@@ -205,11 +205,13 @@ virt/weather/hourly
 
 ### Priorita VYSOKÁ:
 
-1. **[ ] Overiť CMD topics:**
-   - Skontroluj `mosquitto_sub -v -t 'cmd/hvac/#'`
-   - Ak nie sú TRV ventily pripojené → vymazať publish
-   - Ak sú → pridať dokumentáciu
-   - **Status:** Čaká na overenie hardvéru
+1. **[✓] CMD topics - OVERENÉ:**
+   - **UPDATE (27.12.2025):** ✅ Topics sú AKTÍVNE a používané
+   - `mosquitto_sub -v -t 'cmd/hvac/#'` ukázal kontinuálny traffic
+   - Topics používajú **interné Node-RED flow** (planner override logic)
+   - **NIE external TRV ventily** - interná komunikácia medzi flows
+   - Príklad trafficu: setpoint, override, override_duration pre každú miestnosť
+   - **Status:** ✅ Funguje správne, nie sú orphaned
 
 2. **[ ] Opraviť `internal/recalc_mode`:**
    - Implementovať subscriber alebo vymazať publish

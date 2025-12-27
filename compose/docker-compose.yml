@@ -6,6 +6,11 @@ services:
     volumes:
       - ./config/mosquitto:/mosquitto/config:ro
       - mosquitto_data:/mosquitto/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-W", "3"]
       interval: 30s
@@ -43,6 +48,11 @@ services:
       - ./config/nodered/settings.js:/data/settings.js:ro
       - ../config:/config:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:1880"]
       interval: 30s
@@ -57,6 +67,11 @@ services:
     ports: ["8800:80"]
     volumes:
       - baikal_data:/var/www/baikal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/dav.php"]
       interval: 30s
@@ -114,6 +129,11 @@ services:
       - ./config/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
       - /dev:/dev:ro  # Read-only prístup k zariadeniam
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   influxdb:
     image: influxdb:2.7-alpine
@@ -165,6 +185,11 @@ services:
       - NODE_ENV=production
       - MQTT_BROKER_URL=ws://mosquitto:9001
       - HOSTNAME=0.0.0.0
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
