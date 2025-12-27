@@ -38,6 +38,8 @@ describe('MQTT Integration Tests', function() {
   
   afterEach((done) => {
     if (client) {
+      // Remove all message listeners to prevent interference between tests
+      client.removeAllListeners('message');
       client.end(false, () => done());
     } else {
       done();
@@ -69,16 +71,18 @@ describe('MQTT Integration Tests', function() {
       const topic = 'cmd/test/light';
       const payload = JSON.stringify({ state: 'on' });
       
+      const messageHandler = (receivedTopic, message) => {
+        if (receivedTopic === topic) {
+          expect(message.toString()).to.equal(payload);
+          client.removeListener('message', messageHandler);
+          done();
+        }
+      };
+      
+      client.on('message', messageHandler);
+      
       client.subscribe(topic, (err) => {
         expect(err).to.be.null;
-        
-        client.on('message', (receivedTopic, message) => {
-          if (receivedTopic === topic) {
-            expect(message.toString()).to.equal(payload);
-            done();
-          }
-        });
-        
         setTimeout(() => {
           client.publish(topic, payload);
         }, 100);
@@ -89,16 +93,18 @@ describe('MQTT Integration Tests', function() {
       const topic = 'stat/living_room/temperature';
       const payload = '22.5';
       
+      const messageHandler = (receivedTopic, message) => {
+        if (receivedTopic === topic) {
+          expect(message.toString()).to.equal(payload);
+          client.removeListener('message', messageHandler);
+          done();
+        }
+      };
+      
+      client.on('message', messageHandler);
+      
       client.subscribe(topic, (err) => {
         expect(err).to.be.null;
-        
-        client.on('message', (receivedTopic, message) => {
-          if (receivedTopic === topic) {
-            expect(message.toString()).to.equal(payload);
-            done();
-          }
-        });
-        
         setTimeout(() => {
           client.publish(topic, payload, { qos: 0 });
         }, 100);
@@ -112,18 +118,20 @@ describe('MQTT Integration Tests', function() {
       
       let received = 0;
       
+      const messageHandler = (receivedTopic) => {
+        if (receivedTopic.startsWith('test/wildcard/')) {
+          received++;
+          if (received === 2) {
+            client.removeListener('message', messageHandler);
+            done();
+          }
+        }
+      };
+      
+      client.on('message', messageHandler);
+      
       client.subscribe(pattern, (err) => {
         expect(err).to.be.null;
-        
-        client.on('message', (receivedTopic) => {
-          if (receivedTopic.startsWith('test/wildcard/')) {
-            received++;
-            if (received === 2) {
-              done();
-            }
-          }
-        });
-        
         setTimeout(() => {
           client.publish(topic1, 'msg1');
           client.publish(topic2, 'msg2');
@@ -186,18 +194,20 @@ describe('MQTT Integration Tests', function() {
       const messageCount = 100;
       let received = 0;
       
+      const messageHandler = (receivedTopic) => {
+        if (receivedTopic === topic) {
+          received++;
+          if (received === messageCount) {
+            client.removeListener('message', messageHandler);
+            done();
+          }
+        }
+      };
+      
+      client.on('message', messageHandler);
+      
       client.subscribe(topic, (err) => {
         expect(err).to.be.null;
-        
-        client.on('message', (receivedTopic) => {
-          if (receivedTopic === topic) {
-            received++;
-            if (received === messageCount) {
-              done();
-            }
-          }
-        });
-        
         setTimeout(() => {
           for (let i = 0; i < messageCount; i++) {
             client.publish(topic, `msg-${i}`, { qos: 0 });
@@ -210,16 +220,18 @@ describe('MQTT Integration Tests', function() {
       const topic = 'test/large';
       const payload = 'x'.repeat(8192); // 8KB payload
       
+      const messageHandler = (receivedTopic, message) => {
+        if (receivedTopic === topic) {
+          expect(message.toString()).to.equal(payload);
+          client.removeListener('message', messageHandler);
+          done();
+        }
+      };
+      
+      client.on('message', messageHandler);
+      
       client.subscribe(topic, (err) => {
         expect(err).to.be.null;
-        
-        client.on('message', (receivedTopic, message) => {
-          if (receivedTopic === topic) {
-            expect(message.toString()).to.equal(payload);
-            done();
-          }
-        });
-        
         setTimeout(() => {
           client.publish(topic, payload);
         }, 100);
