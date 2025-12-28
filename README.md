@@ -8,6 +8,9 @@ Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teplot
 
 ## 📚 Dokumentácia
 
+### Prehľad Projektu
+- **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** - 🆕 Kompletný stav projektu, implementované funkcie, konfigurácia
+
 ### Používateľská dokumentácia
 - **[QUICKSTART.md](QUICKSTART.md)** - Rýchly 5-minútový setup guide
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Production deployment (30 min)
