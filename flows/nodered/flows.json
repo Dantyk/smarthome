@@ -3701,16 +3701,80 @@
     "type": "function",
     "z": "tab_calendar_google",
     "name": "Parse & Merge Events",
-    "func": "const items = msg.payload?.items || [];\nconst now=new Date();\nconst parsed=[];\nfor(const it of items){\n  const summary=it.summary||'';\n  const description=it.description||'';\n  const startStr=it.start?.dateTime || (it.start?.date ? it.start.date+'T00:00:00Z': null);\n  const endStr=it.end?.dateTime || (it.end?.date ? it.end.date+'T23:59:59Z': null);\n  if(!startStr || !endStr) continue;\n  const start=new Date(startStr);\n  const end=new Date(endStr);\n  const active= now>=start && now<=end;\n  const ev={ uid:`gcal-${it.id}`, summary, description, start:start.toISOString(), end:end.toISOString(), active, type:null, params:{}, source:'google' };\n  const mode=summary.match(/SMH\\s+MODE\\s*=\\s*(\\w+)/i); if(mode){ ev.type='mode'; ev.params.mode=mode[1].toLowerCase(); }\n  const boost=summary.match(/SMH\\s+BOOST\\s+room\\s*=\\s*(\\w+)(?:\\s+temp\\s*=\\s*([\\d.]+))?(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(boost){ ev.type='boost'; ev.params.room=boost[1].toLowerCase(); ev.params.temp=boost[2]?parseFloat(boost[2]):null; ev.params.duration=boost[3]?parseInt(boost[3]):60; }\n  const offset=summary.match(/SMH\\s+OFFSET\\s+room\\s*=\\s*(\\w+)\\s+([+-][\\d.]+)(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(offset){ ev.type='offset'; ev.params.room=offset[1].toLowerCase(); ev.params.offset=parseFloat(offset[2]); ev.params.duration=offset[3]?parseInt(offset[3]):null; }\n  if(!ev.type){ ev.type='calendar'; ev.params.eventName=summary; }\n  parsed.push(ev);\n}\nconst prev=global.get('calendarEvents')||[];\nconst prevGoogleActive=prev.filter(e=>e.source==='google' && e.active).map(e=>e.uid);\nconst nonGoogle=prev.filter(e=>e.source!=='google');\nconst newly=parsed.filter(e=>e.active && !prevGoogleActive.includes(e.uid));\nif(newly.length){ newly.forEach(e=>node.warn(`[gcal] Late-add ${e.type}`)); }\nconst combined = nonGoogle.concat(parsed);\nglobal.set('calendarEvents', combined);\nmsg.payload={ total:combined.length, active:combined.filter(e=>e.active).length, events:combined, newlyActive:newly, sourceCounts:{ google: parsed.length, baikal: nonGoogle.length }, timestamp: now.toISOString() };\nreturn msg;",
+    "func": "const items = msg.payload?.items || [];\nconst now=new Date();\nconst parsed=[];\nfor(const it of items){\n  const summary=it.summary||'';\n  const description=it.description||'';\n  const startStr=it.start?.dateTime || (it.start?.date ? it.start.date+'T00:00:00Z': null);\n  const endStr=it.end?.dateTime || (it.end?.date ? it.end.date+'T23:59:59Z': null);\n  if(!startStr || !endStr) continue;\n  const start=new Date(startStr);\n  const end=new Date(endStr);\n  const active= now>=start && now<=end;\n  const ev={ uid:`gcal-${it.id}`, summary, description, start:start.toISOString(), end:end.toISOString(), active, type:null, params:{}, source:'google' };\n  const mode=summary.match(/SMH\\s+MODE\\s*=\\s*(\\w+)/i); if(mode){ ev.type='mode'; ev.params.mode=mode[1].toLowerCase(); }\n  const boost=summary.match(/SMH\\s+BOOST\\s+room\\s*=\\s*(\\w+)(?:\\s+temp\\s*=\\s*([\\d.]+))?(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(boost){ ev.type='boost'; ev.params.room=boost[1].toLowerCase(); ev.params.temp=boost[2]?parseFloat(boost[2]):null; ev.params.duration=boost[3]?parseInt(boost[3]):60; }\n  const offset=summary.match(/SMH\\s+OFFSET\\s+room\\s*=\\s*(\\w+)\\s+([+-][\\d.]+)(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(offset){ ev.type='offset'; ev.params.room=offset[1].toLowerCase(); ev.params.offset=parseFloat(offset[2]); ev.params.duration=offset[3]?parseInt(offset[3]):null; }\n  if(!ev.type){ ev.type='calendar'; ev.params.eventName=summary; }\n  parsed.push(ev);\n}\nconst prev=global.get('calendarEvents')||[];\nconst prevGoogleActive=prev.filter(e=>e.source==='google' && e.active).map(e=>e.uid);\nconst nonGoogle=prev.filter(e=>e.source!=='google');\nconst newly=parsed.filter(e=>e.active && !prevGoogleActive.includes(e.uid));\nif(newly.length){ newly.forEach(e=>node.warn(`[gcal] Late-add ${e.type}`)); }\nconst combined = nonGoogle.concat(parsed);\nglobal.set('calendarEvents', combined);\nmsg.payload={ total:combined.length, active:combined.filter(e=>e.active).length, events:combined, newlyActive:newly, sourceCounts:{ google: parsed.length, baikal: nonGoogle.length }, timestamp: now.toISOString() };\nmsg.googleEvents = parsed;\nreturn msg;",
     "outputs": 1,
     "x": 770,
     "y": 100,
     "wires": [
       [
         "gcal_mqtt",
-        "gcal_late_add"
+        "gcal_late_add",
+        "gcal_to_baikal"
       ]
     ]
+  },
+  {
+    "id": "gcal_to_baikal",
+    "type": "function",
+    "z": "tab_calendar_google",
+    "name": "Prepare Baïkal Sync",
+    "func": "const googleEvents = msg.googleEvents || [];\nif (!googleEvents.length) { node.warn('[gcal→baikal] No Google events to sync'); return null; }\n\nconst baikalUrl = env.get('BAIKAL_BASE_URL') || 'http://baikal:80/dav.php';\nconst baikalUser = env.get('BAIKAL_USER') || 'smarthome';\nconst baikalPass = env.get('BAIKAL_PASS') || 'smarthome';\nconst calId = env.get('BAIKAL_CAL_ID') || 'default';\n\nconst toICS = (ev) => {\n  const formatDate = (d) => d.replace(/[-:]/g, '').split('.')[0] + 'Z';\n  return `BEGIN:VCALENDAR\\r\\nVERSION:2.0\\r\\nPRODID:-//SmartHome//Google Sync//EN\\r\\nBEGIN:VEVENT\\r\\nUID:${ev.uid}\\r\\nDTSTART:${formatDate(ev.start)}\\r\\nDTEND:${formatDate(ev.end)}\\r\\nSUMMARY:${ev.summary}\\r\\nDESCRIPTION:${ev.description || ''}\\r\\nEND:VEVENT\\r\\nEND:VCALENDAR`;\n};\n\nconst auth = Buffer.from(`${baikalUser}:${baikalPass}`).toString('base64');\nconst requests = googleEvents.map(ev => ({\n  url: `${baikalUrl}/calendars/${baikalUser}/${calId}/${ev.uid}.ics`,\n  method: 'PUT',\n  headers: {\n    'Authorization': `Basic ${auth}`,\n    'Content-Type': 'text/calendar; charset=utf-8'\n  },\n  payload: toICS(ev),\n  event: ev\n}));\n\nmsg.requests = requests;\nnode.warn(`[gcal→baikal] Prepared ${requests.length} CalDAV PUT requests`);\nreturn msg;",
+    "outputs": 1,
+    "x": 1010,
+    "y": 200,
+    "wires": [
+      [
+        "gcal_split_requests"
+      ]
+    ]
+  },
+  {
+    "id": "gcal_split_requests",
+    "type": "function",
+    "z": "tab_calendar_google",
+    "name": "Prepare curl commands",
+    "func": "const requests = msg.requests || [];\nif (!requests.length) return null;\n\nconst baikalUrl = env.get('BAIKAL_BASE_URL') || 'http://baikal:80/dav.php';\nconst baikalUser = env.get('BAIKAL_USER') || 'smarthome';\nconst baikalPass = env.get('BAIKAL_PASS') || 'smarthome';\nconst calId = env.get('BAIKAL_CAL_ID') || 'default';\n\nconst msgs = requests.map(req => {\n  const url = `${baikalUrl}/calendars/${baikalUser}/${calId}/${req.event.uid}.ics`;\n  const auth = Buffer.from(`${baikalUser}:${baikalPass}`).toString('base64');\n  \n  // curl -X PUT with ICS data via stdin\n  const cmd = `echo '${req.payload.replace(/'/g, \"'\\\\''\")}' | curl -X PUT -H 'Authorization: Basic ${auth}' -H 'Content-Type: text/calendar; charset=utf-8' --data-binary @- -w '\\\\nHTTP:%{http_code}' -s '${url}'`;\n  \n  return {\n    payload: cmd,\n    event: req.event\n  };\n});\n\nnode.warn(`[gcal→baikal] Prepared ${msgs.length} curl commands`);\nreturn [msgs];",
+    "outputs": 1,
+    "x": 240,
+    "y": 280,
+    "wires": [
+      [
+        "gcal_baikal_put"
+      ]
+    ]
+  },
+  {
+    "id": "gcal_baikal_put",
+    "type": "exec",
+    "z": "tab_calendar_google",
+    "name": "CalDAV PUT (curl)",
+    "command": "",
+    "addpay": "payload",
+    "append": "",
+    "useSpawn": "false",
+    "timer": "",
+    "winHide": false,
+    "oldrc": false,
+    "x": 440,
+    "y": 280,
+    "wires": [
+      [
+        "gcal_baikal_log"
+      ],
+      [],
+      []
+    ]
+  },
+  {
+    "id": "gcal_baikal_log",
+    "type": "function",
+    "z": "tab_calendar_google",
+    "name": "Log Result",
+    "func": "const output = msg.payload || '';\nconst status = output.match(/HTTP:(\\d+)/);\nconst httpCode = status ? parseInt(status[1]) : 0;\nconst event = msg.event?.summary || 'unknown';\n\nif (httpCode >= 200 && httpCode < 300) {\n  node.warn(`[gcal→baikal] ✅ Synced: ${event} (HTTP ${httpCode})`);\n} else {\n  node.error(`[gcal→baikal] ❌ Failed (${httpCode}): ${event}`);\n}\nreturn null;",
+    "outputs": 0,
+    "x": 650,
+    "y": 280,
+    "wires": []
   },
   {
     "id": "gcal_mqtt",

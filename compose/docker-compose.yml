@@ -68,6 +68,7 @@ services:
     ports: ["8800:80"]
     volumes:
       - baikal_data:/var/www/baikal
+      - ./config/baikal/baikal.yaml:/var/www/baikal/config/baikal.yaml:ro
     logging:
       driver: "json-file"
       options:
