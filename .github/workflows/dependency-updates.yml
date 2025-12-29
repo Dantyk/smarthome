@@ -34,7 +34,10 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore: update npm dependencies'
+          committer: 'GitHub Actions <github-actions[bot]@users.noreply.github.com>'
+          author: 'GitHub Actions <github-actions[bot]@users.noreply.github.com>'
           title: 'Automated dependency updates'
           body: |
             This PR updates npm dependencies to their latest versions.

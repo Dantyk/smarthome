@@ -148,6 +148,121 @@ groups:
           description: "{{ $labels.job }} has been down for 2 minutes"
           action: "URGENT: Restart service - docker compose restart {{ $labels.job }}"
       
+      # Disk Space Monitoring
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.15
+        for: 5m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Kriticky nízky diskový priestor (< 15%)"
+          description: "Zostáva len {{ $value | humanizePercentage }} voľného miesta na /"
+          action: "URGENT: Uvoľniť priestor - docker system prune, vymazať staré logy"
+      
+      - alert: DiskSpaceWarning
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.25
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Nízky diskový priestor (< 25%)"
+          description: "Zostáva {{ $value | humanizePercentage }} voľného miesta na /"
+          action: "Plánovať cleanup - docker system prune, skontrolovať InfluxDB retention"
+      
+      # Container Restart Tracking
+      - alert: ContainerRestarting
+        expr: rate(container_last_seen{name=~".+"}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Kontajner {{ $labels.name }} sa opakuje reštartuje"
+          description: "Detekované reštarty kontajnera za posledných 5 minút"
+          action: "Skontrolovať logy: docker compose logs {{ $labels.name }}"
+      
+      - alert: ContainerCrashLoop
+        expr: rate(container_last_seen{name=~".+"}[10m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Kontajner {{ $labels.name }} je v crash loop"
+          description: "Časté reštarty indikujú crash loop"
+          action: "URGENT: docker compose logs {{ $labels.name }} a opraviť príčinu"
+      
+      # Memory Pressure
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Vysoké využitie RAM (< 10% voľnej)"
+          description: "Zostáva len {{ $value | humanizePercentage }} voľnej pamäte"
+          action: "Skontrolovať docker stats, zvážiť reštart náročných služieb"
+      
+      - alert: MemoryCritical
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Kritické využitie RAM (< 5% voľnej)"
+          description: "Zostáva len {{ $value | humanizePercentage }} voľnej pamäte - hrozí OOM"
+          action: "URGENT: Reštartovať služby alebo zvýšiť RAM"
+      
+      # CPU Overload
+      - alert: HighCPULoad
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Vysoké zaťaženie CPU (> 85%)"
+          description: "CPU load: {{ $value | humanizePercentage }}"
+          action: "Skontrolovať top procesy, optimalizovať alebo škálovať"
+      
+      - alert: CPUCritical
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Kritické zaťaženie CPU (> 95%)"
+          description: "CPU load: {{ $value | humanizePercentage }} - systém je preťažený"
+          action: "URGENT: Identifikovať a ukončiť náročné procesy"
+      
+      # Temperature Monitoring (Raspberry Pi)
+      - alert: HighTemperature
+        expr: node_hwmon_temp_celsius > 70
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Vysoká teplota Raspberry Pi"
+          description: "Teplota: {{ $value }}°C (limit 70°C)"
+          action: "Skontrolovať chladenie, znížiť záťaž"
+      
+      - alert: CriticalTemperature
+        expr: node_hwmon_temp_celsius > 80
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Kritická teplota Raspberry Pi"
+          description: "Teplota: {{ $value }}°C (limit 80°C) - hrozí throttling"
+          action: "URGENT: Zastaviť náročné služby, zlepšiť chladenie"
+      
       # Config Reloads
       - alert: FrequentConfigReloads
         expr: rate(config_reloads_total[5m]) > 0.1
