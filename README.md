@@ -67,7 +67,6 @@ Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teplot
 #### Základné (vždy spustené)
 - **Node-RED** - Hlavná riadiaca logika, kalendárová synchronizácia, MQTT orchestrácia
 - **Mosquitto MQTT** - Message broker pre komunikáciu medzi komponentmi
-- **Baïkal CalDAV** - Lokálny kalendárový server pre manuálne udalosti
 - **Next.js UI** - Webové rozhranie pre ovládanie a monitoring (port 8088)
 
 #### Voliteľné (spúšťajú sa cez profily)
@@ -80,10 +79,8 @@ Automatizovaný systém pre domáce vykurovanie s pokročilou reguláciou teplot
 ### Dátový tok
 
 ```
-Google Calendar ──┐
-                  ├──> Node-RED ──> MQTT ──> Termostaty
-Baïkal CalDAV ───┘         │
-                           └──> Next.js UI
+Google Calendar ──> Node-RED ──> MQTT ──> Termostaty
+                         └──> Next.js UI
 ```
 
 ## 📋 Požiadavky
@@ -143,19 +140,14 @@ Baïkal CalDAV ───┘         │
    docker compose --profile notify up -d
    ```
 
-5. **Dokončí Baïkal setup:**
-   - Otvor: `http://localhost:8800/admin/`
-   - Admin heslo: `admin` (alebo podľa `.env`)
-   - Vytvor používateľa: `smarthome` / `smarthome`
-
-6. **Otvor Node-RED:**
+5. **Otvor Node-RED:**
    - URL: `http://localhost:1880`
    - Import flows z `/flows/nodered/flows.json`
 
 7. **Prístup k webovým rozhraniám:**
    - **SmartHome UI**: `http://localhost:8088`
    - **Node-RED**: `http://localhost:1880`
-   - **Baïkal**: `http://localhost:8800/admin/`
+
    - **Z-Wave JS UI**: `http://localhost:8091` (ak zapnutý profil `zwave`)
    - **Zigbee2MQTT**: `http://localhost:8090` (ak zapnutý profil `zigbee`)
    - **Grafana**: `http://localhost:3000` (ak zapnutý profil `metrics`)
@@ -232,7 +224,7 @@ SMH MODE=workday
 ```
 
 **Použitie:**
-- Vytvor udalosť v Google Calendar alebo Baïkal
+- Vytvor udalosť v Google Calendar
 - Názov: `SMH MODE=visitors`
 - Čas: Dnes 14:00 - 18:00
 - **Výsledok**: Počas návštevy (14-18h) sa aktivuje režim "visitors"
@@ -671,7 +663,6 @@ curl -s "http://localhost:8086/api/v2/buckets?org=Home" \
 ### Automatický monitoring služieb
 
 **Node-RED Health Check** (každé 2 minúty):
-- ✅ **baikal** - CalDAV kalendár
 - ✅ **nodered** - Node-RED engine
 - ✅ **zwavejsui** - Z-Wave controller
 - ✅ **apprise** - Push notifikácie
@@ -773,7 +764,6 @@ docker compose logs nodered | grep "\[gcal\]"
 ### Reštart služieb
 ```bash
 docker compose restart nodered
-docker compose restart baikal
 ```
 
 ### UI dev / deployment note
@@ -890,12 +880,11 @@ docker exec compose-redis-1 redis-cli FLUSHALL
 
 ### Zálohovanie
 ```bash
-# Baïkal kalendár
-docker compose exec baikal tar czf /tmp/baikal-backup.tar.gz /var/www/baikal/Specific
-
 # Node-RED flows
 cp flows/nodered/flows.json flows/nodered/flows.json.backup
 ```
+
+**Poznámka**: Udalosti sa čerpajú priamo z Google Calendar cez API (60s polling). Baïkal CalDAV bol odstránený (nadbytočný, permissions issues).
 
 ## 📊 MQTT Topics
 
@@ -923,9 +912,8 @@ mosquitto_pub -t virt/offset/living/value -m -1 -r
 ## 🛡️ Bezpečnosť
 
 - **Nikdy necommituj `.env` súbor!** (obsahuje API kľúče)
-- Zmeň defaultné heslá pre Baïkal admin
-- Používaj HTTPS pre vzdialený prístup
-- Firewall: Otvor len potrebné porty (1880, 8800, 8088)
+- Používaj HTTPS pre vzdialeny prístup
+- Firewall: Otvor len potrebné porty (1880, 8088)
 
 ## 📚 Dokumentácia
 

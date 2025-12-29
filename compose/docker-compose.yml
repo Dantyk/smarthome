@@ -30,10 +30,6 @@ services:
     environment:
       - TZ=Europe/Bratislava
       - NR_CRED_SECRET=${NR_CRED_SECRET:-change-me-in-production}
-      - BAIKAL_BASE_URL=http://baikal:80/dav.php
-      - BAIKAL_USER=smarthome
-      - BAIKAL_PASS=smarthome
-      - BAIKAL_CAL_ID=default
       - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID:-}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
@@ -61,42 +57,6 @@ services:
       retries: 3
       start_period: 30s
     stop_grace_period: 30s
-  
-  baikal:
-    image: ckulka/baikal:0.10.1-apache
-    restart: unless-stopped
-    ports: ["8800:80"]
-    volumes:
-      - baikal_data:/var/www/baikal
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/dav.php"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-    command: >
-      sh -c "chown -R www-data:www-data /var/www/baikal/Specific &&
-             chmod -R 775 /var/www/baikal/Specific &&
-             exec apache2-foreground"
-  
-  baikal-init:
-    image: curlimages/curl:latest
-    depends_on:
-      - baikal
-    environment:
-      - BAIKAL_URL=http://baikal:80
-      - BAIKAL_USER=smarthome
-      - BAIKAL_PASS=smarthome
-      - BAIKAL_CALENDAR_NAME=default
-    volumes:
-      - ./scripts/baikal-init.sh:/scripts/baikal-init.sh:ro
-    entrypoint: ["/bin/sh", "/scripts/baikal-init.sh"]
-    restart: "no"
   
   apprise:
     image: caronc/apprise:latest
@@ -316,7 +276,6 @@ services:
 
 volumes:
   mosquitto_data:
-  baikal_data:
   apprise_config:
   zwave_data:
   influxdb_data:

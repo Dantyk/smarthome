@@ -39,7 +39,7 @@
     "type": "tab",
     "label": "Health: Service Pinger",
     "disabled": false,
-    "info": "HTTP ping služieb: mosquitto, baikal, nodered, z2m, zwavejsui, apprise\nPublish: meta/service/<name>/online (heartbeat)\nVersion info (retained)"
+    "info": "HTTP ping služieb: nodered, zwavejsui, apprise\nPublish: meta/service/<name>/online (heartbeat)\nVersion info (retained)"
   },
   {
     "id": "tab_api",
@@ -101,13 +101,6 @@
     "disabled": false
   },
   {
-    "id": "3c9175e0418cb802",
-    "type": "tab",
-    "label": "Calendar: Baikal Delta-Sync",
-    "disabled": false,
-    "info": "CalDAV delta synchronization\nPolling interval: 20s\nDSL parsing: SMH MODE=, SMH BOOST, SMH OFFSET\nLate-add logic"
-  },
-  {
     "id": "33bedd3c7b4b855f",
     "type": "tab",
     "label": "Override Confirm",
@@ -118,7 +111,7 @@
     "type": "tab",
     "label": "Calendar: Google Sync",
     "disabled": false,
-    "info": "Google Calendar REST sync\nPolling interval: 60s\nMerges with Baikal events; preserves google source; DSL parsing identical"
+    "info": "Google Calendar REST sync\nPolling interval: 60s\nDSL parsing for SMH MODE/BOOST/OFFSET events"
   },
   {
     "id": "tab_calendar_health_ttl",
@@ -1403,7 +1396,7 @@
         "name": "startup",
         "topic": "startup",
         "payloadType": "json",
-        "payload": "[\"baikal\",\"nodered\",\"zwavejsui\",\"apprise\"]",
+        "payload": "[\"nodered\",\"zwavejsui\",\"apprise\"]",
         "expressionType": "cron",
         "expression": "0 * * * * *",
         "location": "",
@@ -1415,7 +1408,7 @@
         "name": "ping",
         "topic": "ping",
         "payloadType": "json",
-        "payload": "[\"baikal\",\"nodered\",\"zwavejsui\",\"apprise\"]",
+        "payload": "[\"nodered\",\"zwavejsui\",\"apprise\"]",
         "expressionType": "cron",
         "expression": "0 */2 * * * *",
         "location": "",
@@ -1456,7 +1449,7 @@
     "type": "function",
     "z": "tab_health",
     "name": "Prepare URL",
-    "func": "const service = typeof msg.payload === 'string' ? msg.payload : msg.payload.toString();\nconst baikalUrl = env.get('BAIKAL_BASE_URL') || 'http://baikal:80';\n\nconst serviceUrls = {\n    'mosquitto': 'http://mosquitto:9001',\n    'baikal': baikalUrl,\n    'nodered': 'http://localhost:1880',\n    'zigbee2mqtt': 'http://zigbee2mqtt:8080',\n    'zwavejsui': 'http://zwavejsui:8091',\n    'apprise': 'http://apprise:8000'\n};\n\nconst url = serviceUrls[service];\n\nif (!url) {\n    node.error(`[health] Unknown service: ${service}`);\n    return null;\n}\n\nmsg.url = url;\nmsg.service = service;\n\n// Add Basic auth for Baikal\nif (service === 'baikal') {\n    const user = env.get('BAIKAL_USER') || 'smarthome';\n    const pass = env.get('BAIKAL_PASS') || 'smarthome';\n    const auth = Buffer.from(`${user}:${pass}`).toString('base64');\n    msg.headers = {\n        'Authorization': `Basic ${auth}`\n    };\n}\n\nreturn msg;",
+    "func": "const service = typeof msg.payload === 'string' ? msg.payload : msg.payload.toString();\n\nconst serviceUrls = {\n    'mosquitto': 'http://mosquitto:9001',\n    'nodered': 'http://localhost:1880',\n    'zigbee2mqtt': 'http://zigbee2mqtt:8080',\n    'zwavejsui': 'http://zwavejsui:8091',\n    'apprise': 'http://apprise:8000'\n};\n\nconst url = serviceUrls[service];\n\nif (!url) {\n    node.error(`[health] Unknown service: ${service}`);\n    return null;\n}\n\nmsg.url = url;\nmsg.service = service;\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -1570,7 +1563,7 @@
     "type": "function",
     "z": "tab_api",
     "name": "Status Handler",
-    "func": "const modes = global.get('modes') || {};\nconst modesCfg = global.get('modesCfg') || {};\nconst calendarEvents = global.get('calendarEvents') || [];\nconst alertHistory = global.get('alertHistory') || [];\nconst rooms = modesCfg.rooms || modes.rooms || [];\nconst roomStatus = [];\n\n// Get active regimes to determine dominant mode\nconst activeRegimes = global.get('activeRegimesByRoom') || {};\nconst regimeCounts = {};\nObject.values(activeRegimes).forEach(regime => {\n    regimeCounts[regime] = (regimeCounts[regime] || 0) + 1;\n});\nconst dominantRegime = Object.keys(regimeCounts).reduce((a, b) => \n    regimeCounts[a] > regimeCounts[b] ? a : b, 'PRACOVNY_DEN'\n);\n\n// Map regime to mode name (lowercase)\nconst regimeToMode = {\n    'VIKEND': 'vikend',\n    'PRACOVNY_DEN': 'pracovny_den',\n    'PT': 'pt'\n};\nconst currentMode = regimeToMode[dominantRegime] || 'pracovny_den';\n\nrooms.forEach(room => {\n    const currentTemp = flow.get(`room_${room}_current_temp`) || null;\n    const targetTemp = flow.get(`room_${room}_target_temp`) || null;\n    const heating = flow.get(`room_${room}_heating`) || false;\n    const boost = global.get(`boost_${room}_active`) || false;\n    \n    roomStatus.push({\n        name: room,\n        current_temp: currentTemp,\n        target_temp: targetTemp,\n        heating: heating,\n        boost: boost\n    });\n});\n\n// Get active overrides from override_map\nconst overrideMap = flow.get('override_map') || {};\nconst activeOverrides = [];\nObject.keys(overrideMap).forEach(room => {\n    const ov = overrideMap[room];\n    if (ov && ov.active) {\n        activeOverrides.push({\n            room: room,\n            until: ov.until,\n            reason: ov.reason || 'manual'\n        });\n    }\n});\n\nmsg.payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    rooms: roomStatus,\n    mode: {\n        current: currentMode,\n        overrides: activeOverrides\n    },\n    calendar: {\n        active_events: calendarEvents.filter(e => e.active).length,\n        total_events: calendarEvents.length\n    },\n    alerts: {\n        total: alertHistory.length,\n        unacknowledged: alertHistory.filter(a => !a.acknowledged).length\n    },\n    services: {\n        nodered: true,\n        mosquitto: true,  // Docker Compose - ak NodeRED beží, Mosquitto beží\n        baikal: true  // Docker Compose - ak NodeRED beží, Baikal beží\n    }\n};\n\nreturn msg;",
+    "func": "const modes = global.get('modes') || {};\nconst modesCfg = global.get('modesCfg') || {};\nconst calendarEvents = global.get('calendarEvents') || [];\nconst alertHistory = global.get('alertHistory') || [];\nconst rooms = modesCfg.rooms || modes.rooms || [];\nconst roomStatus = [];\n\n// Get active regimes to determine dominant mode\nconst activeRegimes = global.get('activeRegimesByRoom') || {};\nconst regimeCounts = {};\nObject.values(activeRegimes).forEach(regime => {\n    regimeCounts[regime] = (regimeCounts[regime] || 0) + 1;\n});\nconst dominantRegime = Object.keys(regimeCounts).reduce((a, b) => \n    regimeCounts[a] > regimeCounts[b] ? a : b, 'PRACOVNY_DEN'\n);\n\n// Map regime to mode name (lowercase)\nconst regimeToMode = {\n    'VIKEND': 'vikend',\n    'PRACOVNY_DEN': 'pracovny_den',\n    'PT': 'pt'\n};\nconst currentMode = regimeToMode[dominantRegime] || 'pracovny_den';\n\nrooms.forEach(room => {\n    const currentTemp = flow.get(`room_${room}_current_temp`) || null;\n    const targetTemp = flow.get(`room_${room}_target_temp`) || null;\n    const heating = flow.get(`room_${room}_heating`) || false;\n    const boost = global.get(`boost_${room}_active`) || false;\n    \n    roomStatus.push({\n        name: room,\n        current_temp: currentTemp,\n        target_temp: targetTemp,\n        heating: heating,\n        boost: boost\n    });\n});\n\n// Get active overrides from override_map\nconst overrideMap = flow.get('override_map') || {};\nconst activeOverrides = [];\nObject.keys(overrideMap).forEach(room => {\n    const ov = overrideMap[room];\n    if (ov && ov.active) {\n        activeOverrides.push({\n            room: room,\n            until: ov.until,\n            reason: ov.reason || 'manual'\n        });\n    }\n});\n\nmsg.payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    rooms: roomStatus,\n    mode: {\n        current: currentMode,\n        overrides: activeOverrides\n    },\n    calendar: {\n        active_events: calendarEvents.filter(e => e.active).length,\n        total_events: calendarEvents.length\n    },\n    alerts: {\n        total: alertHistory.length,\n        unacknowledged: alertHistory.filter(a => !a.acknowledged).length\n    },\n    services: {\n        nodered: true,\n        mosquitto: true  // Docker Compose - ak NodeRED beží, Mosquitto beží\n    }\n};\n\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -3378,182 +3371,6 @@
     ]
   },
   {
-    "id": "cbf25c776fe2ff17",
-    "type": "cronplus",
-    "z": "3c9175e0418cb802",
-    "name": "Every 20s + Startup",
-    "outputField": "payload",
-    "timeZone": "",
-    "storeName": "",
-    "commandResponseMsgOutput": "output1",
-    "defaultLocation": "",
-    "defaultLocationType": "default",
-    "outputs": 1,
-    "options": [
-      {
-        "name": "startup",
-        "topic": "startup",
-        "payloadType": "default",
-        "payload": "",
-        "expressionType": "cron",
-        "expression": "0 * * * * *",
-        "location": "",
-        "offset": "0",
-        "solarType": "all",
-        "solarEvents": "sunrise,sunset"
-      },
-      {
-        "name": "poll",
-        "topic": "poll",
-        "payloadType": "default",
-        "payload": "",
-        "expressionType": "cron",
-        "expression": "*/20 * * * * *",
-        "location": "",
-        "offset": "0",
-        "solarType": "all",
-        "solarEvents": "sunrise,sunset"
-      }
-    ],
-    "x": 160,
-    "y": 100,
-    "wires": [
-      [
-        "20bfe6f925bf6e48"
-      ]
-    ]
-  },
-  {
-    "id": "20bfe6f925bf6e48",
-    "type": "function",
-    "z": "3c9175e0418cb802",
-    "name": "Prepare CalDAV Request",
-    "func": "const baseUrl = env.get('BAIKAL_BASE_URL');\nconst user = env.get('BAIKAL_USER');\nconst pass = env.get('BAIKAL_PASS');\nconst calId = env.get('BAIKAL_CAL_ID');\nif (!baseUrl) { node.error('[calendar] BAIKAL_BASE_URL not set'); return null; }\nconst url = `${baseUrl}/calendars/${user}/${calId}/`;\nconst auth = Buffer.from(`${user}:${pass}`).toString('base64');\nconst now = new Date();\nconst start = new Date(now.getTime() - 86400000);\nconst end = new Date(now.getTime() + 7*86400000);\nconst formatDate = d => d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z';\nconst xmlBody = `<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<c:calendar-query xmlns:d=\"DAV:\" xmlns:c=\"urn:ietf:params:xml:ns:caldav\">\n <d:prop><c:calendar-data/></d:prop>\n <c:filter><c:comp-filter name=\"VCALENDAR\"><c:comp-filter name=\"VEVENT\"><c:time-range start=\"${formatDate(start)}\" end=\"${formatDate(end)}\"/></c:comp-filter></c:comp-filter></c:filter>\n</c:calendar-query>`;\nmsg.url = url; msg.method='REPORT'; msg.headers={Authorization:`Basic ${auth}`,'Content-Type':'application/xml; charset=utf-8','Depth':'1'}; msg.payload=xmlBody; node.warn(`[calendar] CalDAV REPORT ${url}`); return msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "x": 230,
-    "y": 220,
-    "wires": [
-      [
-        "0e62ca064ee3a871"
-      ]
-    ]
-  },
-  {
-    "id": "0e62ca064ee3a871",
-    "type": "http request",
-    "z": "3c9175e0418cb802",
-    "name": "HTTP REPORT",
-    "method": "use",
-    "ret": "txt",
-    "paytoqs": "ignore",
-    "url": "",
-    "persist": false,
-    "x": 420,
-    "y": 100,
-    "wires": [
-      [
-        "e1940333e078a33c"
-      ]
-    ]
-  },
-  {
-    "id": "e1940333e078a33c",
-    "type": "function",
-    "z": "3c9175e0418cb802",
-    "name": "Parse XML Response",
-    "func": "const xml = msg.payload; const events=[]; const re=/<(?:c|cal):calendar-data>([\\s\\S]*?)<\\/(?:c|cal):calendar-data>/gi; let m; while((m=re.exec(xml))!==null){ const ical=m[1].trim(); const uid=/(?:^|\\n)UID:([^\\r\\n]+)/.exec(ical); const sum=/(?:^|\\n)SUMMARY:([^\\r\\n]+)/.exec(ical); const desc=/(?:^|\\n)DESCRIPTION:([^\\r\\n]+)/.exec(ical); const st=/(?:^|\\n)DTSTART:([^\\r\\n]+)/.exec(ical); const en=/(?:^|\\n)DTEND:([^\\r\\n]+)/.exec(ical); if(uid&&sum&&st&&en){ const parseDate = s => new Date(`${s.substr(0,4)}-${s.substr(4,2)}-${s.substr(6,2)}T${s.substr(9,2)}:${s.substr(11,2)}:${s.substr(13,2)}Z`); events.push({ uid: uid[1], summary: sum[1], description: desc?desc[1]:'', start: parseDate(st[1]), end: parseDate(en[1])}); } } node.warn(`[calendar] Parsed ${events.length} events`); msg.payload=events; return msg;",
-    "outputs": 1,
-    "x": 540,
-    "y": 220,
-    "wires": [
-      [
-        "a1be2b03fde9264a"
-      ]
-    ]
-  },
-  {
-    "id": "a1be2b03fde9264a",
-    "type": "function",
-    "z": "3c9175e0418cb802",
-    "name": "Parse DSL & Store Events",
-    "func": "/* Baikal events parse; preserve existing Google events in merged calendarEvents */\nconst now=new Date();\nconst raw=msg.payload||[];\nconst baikalEvents=[];\nfor(const e of raw){\n  const sum=e.summary||'';\n  const desc=e.description||'';\n  const start=new Date(e.start);\n  const end=new Date(e.end);\n  const active= now>=start && now<=end;\n  const parsed={ uid:e.uid, summary:sum, description:desc, start:start.toISOString(), end:end.toISOString(), active, type:null, params:{}, source:'baikal' };\n  const mode=sum.match(/SMH\\s+MODE\\s*=\\s*(\\w+)/i); if(mode){ parsed.type='mode'; parsed.params.mode=mode[1].toLowerCase(); node.warn(`[calendar] MODE event: ${sum}, active=${active}, mode=${parsed.params.mode}, start=${start.toISOString()}, end=${end.toISOString()}, now=${now.toISOString()}`); }\n  const boost=sum.match(/SMH\\s+BOOST\\s+room\\s*=\\s*(\\w+)(?:\\s+temp\\s*=\\s*([\\d.]+))?(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(boost){ parsed.type='boost'; parsed.params.room=boost[1].toLowerCase(); parsed.params.temp=boost[2]?parseFloat(boost[2]):null; parsed.params.duration=boost[3]?parseInt(boost[3]):60; }\n  const offset=sum.match(/SMH\\s+OFFSET\\s+room\\s*=\\s*(\\w+)\\s+([+-][\\d.]+)(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(offset){ parsed.type='offset'; parsed.params.room=offset[1].toLowerCase(); parsed.params.offset=parseFloat(offset[2]); parsed.params.duration=offset[3]?parseInt(offset[3]):null; }\n  if(!parsed.type){ parsed.type='calendar'; parsed.params.eventName=sum; }\n  baikalEvents.push(parsed);\n}\nconst prev=global.get('calendarEvents')||[];\nconst prevGoogle=prev.filter(e=>e.source==='google');\nconst prevBaikalActive=prev.filter(e=>e.source!=='google' && e.active).map(e=>e.uid);\nconst newly=baikalEvents.filter(e=>e.active && !prevBaikalActive.includes(e.uid));\nif(newly.length){ newly.forEach(x=>node.warn(`[calendar] Late-add ${x.type}`)); }\nconst combined=baikalEvents.concat(prevGoogle);\nglobal.set('calendarEvents', combined);\nmsg.payload={ total:combined.length, active:combined.filter(x=>x.active).length, newlyActive:newly, events:combined, sourceCounts:{ baikal: baikalEvents.length, google: prevGoogle.length }, timestamp: now.toISOString() };\nreturn msg;",
-    "outputs": 1,
-    "timeout": "",
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 700,
-    "y": 100,
-    "wires": [
-      [
-        "e224bf2d80511330",
-        "1238cfd23e135f85"
-      ]
-    ]
-  },
-  {
-    "id": "e224bf2d80511330",
-    "type": "mqtt out",
-    "z": "3c9175e0418cb802",
-    "name": "Calendar Events",
-    "topic": "virt/calendar/events/current",
-    "qos": "1",
-    "retain": "true",
-    "broker": "mqtt_broker",
-    "x": 850,
-    "y": 220,
-    "wires": []
-  },
-  {
-    "id": "1238cfd23e135f85",
-    "type": "function",
-    "z": "3c9175e0418cb802",
-    "name": "Apply Late-Add Events",
-    "func": "const newly=msg.payload.newlyActive||[]; if(!newly.length) return null; const msgs=[]; for(const e of newly){ if(e.type==='boost'&&e.params.room){ node.warn(`[late-add] BOOST: room=${e.params.room}, temp=${e.params.temp}, dur=${e.params.duration||60}`); msgs.push({topic:`virt/boost/${e.params.room}/minutes`,payload:e.params.duration||60,retain:true}); node.warn(`[late-add] After minutes push: msgs.length=${msgs.length}`); if(e.params.temp){ msgs.push({topic:`virt/boost/${e.params.room}/target_temp`,payload:e.params.temp,retain:true}); node.warn(`[late-add] After temp push: msgs.length=${msgs.length}`); } } if(e.type==='offset'&&e.params.room){ msgs.push({topic:`virt/offset/${e.params.room}/value`,payload:e.params.offset,retain:true}); } if(e.type==='mode'){ msgs.push({topic:'internal/recalc_mode',payload:{trigger:'calendar',mode:e.params.mode}}); } } node.warn(`[late-add] Returning ${msgs.length} messages`); msg.payload=msgs; return msg;",
-    "outputs": 1,
-    "x": 220,
-    "y": 340,
-    "wires": [
-      [
-        "baikal_late_split"
-      ]
-    ]
-  },
-  {
-    "id": "baikal_late_split",
-    "type": "split",
-    "z": "3c9175e0418cb802",
-    "name": "Split Messages",
-    "splt": "\\n",
-    "spltType": "str",
-    "arraySplt": 1,
-    "arraySpltType": "len",
-    "stream": false,
-    "addname": "",
-    "x": 350,
-    "y": 340,
-    "wires": [
-      [
-        "22eed87c09bb0b81"
-      ]
-    ]
-  },
-  {
-    "id": "22eed87c09bb0b81",
-    "type": "mqtt out",
-    "z": "3c9175e0418cb802",
-    "name": "",
-    "topic": "",
-    "qos": "",
-    "retain": "",
-    "broker": "mqtt_broker",
-    "x": 470,
-    "y": 340,
-    "wires": []
-  },
-  {
     "id": "4304a79604698e2b",
     "type": "mqtt in",
     "z": "33bedd3c7b4b855f",
@@ -3701,80 +3518,16 @@
     "type": "function",
     "z": "tab_calendar_google",
     "name": "Parse & Merge Events",
-    "func": "const items = msg.payload?.items || [];\nconst now=new Date();\nconst parsed=[];\nfor(const it of items){\n  const summary=it.summary||'';\n  const description=it.description||'';\n  const startStr=it.start?.dateTime || (it.start?.date ? it.start.date+'T00:00:00Z': null);\n  const endStr=it.end?.dateTime || (it.end?.date ? it.end.date+'T23:59:59Z': null);\n  if(!startStr || !endStr) continue;\n  const start=new Date(startStr);\n  const end=new Date(endStr);\n  const active= now>=start && now<=end;\n  const ev={ uid:`gcal-${it.id}`, summary, description, start:start.toISOString(), end:end.toISOString(), active, type:null, params:{}, source:'google' };\n  const mode=summary.match(/SMH\\s+MODE\\s*=\\s*(\\w+)/i); if(mode){ ev.type='mode'; ev.params.mode=mode[1].toLowerCase(); }\n  const boost=summary.match(/SMH\\s+BOOST\\s+room\\s*=\\s*(\\w+)(?:\\s+temp\\s*=\\s*([\\d.]+))?(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(boost){ ev.type='boost'; ev.params.room=boost[1].toLowerCase(); ev.params.temp=boost[2]?parseFloat(boost[2]):null; ev.params.duration=boost[3]?parseInt(boost[3]):60; }\n  const offset=summary.match(/SMH\\s+OFFSET\\s+room\\s*=\\s*(\\w+)\\s+([+-][\\d.]+)(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(offset){ ev.type='offset'; ev.params.room=offset[1].toLowerCase(); ev.params.offset=parseFloat(offset[2]); ev.params.duration=offset[3]?parseInt(offset[3]):null; }\n  if(!ev.type){ ev.type='calendar'; ev.params.eventName=summary; }\n  parsed.push(ev);\n}\nconst prev=global.get('calendarEvents')||[];\nconst prevGoogleActive=prev.filter(e=>e.source==='google' && e.active).map(e=>e.uid);\nconst nonGoogle=prev.filter(e=>e.source!=='google');\nconst newly=parsed.filter(e=>e.active && !prevGoogleActive.includes(e.uid));\nif(newly.length){ newly.forEach(e=>node.warn(`[gcal] Late-add ${e.type}`)); }\nconst combined = nonGoogle.concat(parsed);\nglobal.set('calendarEvents', combined);\nmsg.payload={ total:combined.length, active:combined.filter(e=>e.active).length, events:combined, newlyActive:newly, sourceCounts:{ google: parsed.length, baikal: nonGoogle.length }, timestamp: now.toISOString() };\nmsg.googleEvents = parsed;\nreturn msg;",
+    "func": "const items = msg.payload?.items || [];\nconst now=new Date();\nconst parsed=[];\nfor(const it of items){\n  const summary=it.summary||'';\n  const description=it.description||'';\n  const startStr=it.start?.dateTime || (it.start?.date ? it.start.date+'T00:00:00Z': null);\n  const endStr=it.end?.dateTime || (it.end?.date ? it.end.date+'T23:59:59Z': null);\n  if(!startStr || !endStr) continue;\n  const start=new Date(startStr);\n  const end=new Date(endStr);\n  const active= now>=start && now<=end;\n  const ev={ uid:`gcal-${it.id}`, summary, description, start:start.toISOString(), end:end.toISOString(), active, type:null, params:{}, source:'google' };\n  const mode=summary.match(/SMH\\s+MODE\\s*=\\s*(\\w+)/i); if(mode){ ev.type='mode'; ev.params.mode=mode[1].toLowerCase(); }\n  const boost=summary.match(/SMH\\s+BOOST\\s+room\\s*=\\s*(\\w+)(?:\\s+temp\\s*=\\s*([\\d.]+))?(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(boost){ ev.type='boost'; ev.params.room=boost[1].toLowerCase(); ev.params.temp=boost[2]?parseFloat(boost[2]):null; ev.params.duration=boost[3]?parseInt(boost[3]):60; }\n  const offset=summary.match(/SMH\\s+OFFSET\\s+room\\s*=\\s*(\\w+)\\s+([+-][\\d.]+)(?:\\s+dur\\s*=\\s*(\\d+))?/i); if(offset){ ev.type='offset'; ev.params.room=offset[1].toLowerCase(); ev.params.offset=parseFloat(offset[2]); ev.params.duration=offset[3]?parseInt(offset[3]):null; }\n  if(!ev.type){ ev.type='calendar'; ev.params.eventName=summary; }\n  parsed.push(ev);\n}\nconst prev=global.get('calendarEvents')||[];\nconst prevActive=prev.filter(e=>e.active).map(e=>e.uid);\nconst newly=parsed.filter(e=>e.active && !prevActive.includes(e.uid));\nif(newly.length){ newly.forEach(e=>node.warn(`[gcal] Late-add ${e.type}`)); }\nglobal.set('calendarEvents', parsed);\nmsg.payload={ total:parsed.length, active:parsed.filter(e=>e.active).length, events:parsed, newlyActive:newly, timestamp: now.toISOString() };\nmsg.googleEvents = parsed;\nreturn msg;",
     "outputs": 1,
     "x": 770,
     "y": 100,
     "wires": [
       [
         "gcal_mqtt",
-        "gcal_late_add",
-        "gcal_to_baikal"
+        "gcal_late_add"
       ]
     ]
-  },
-  {
-    "id": "gcal_to_baikal",
-    "type": "function",
-    "z": "tab_calendar_google",
-    "name": "Prepare Baïkal Sync",
-    "func": "const googleEvents = msg.googleEvents || [];\nif (!googleEvents.length) { node.warn('[gcal→baikal] No Google events to sync'); return null; }\n\nconst baikalUrl = env.get('BAIKAL_BASE_URL') || 'http://baikal:80/dav.php';\nconst baikalUser = env.get('BAIKAL_USER') || 'smarthome';\nconst baikalPass = env.get('BAIKAL_PASS') || 'smarthome';\nconst calId = env.get('BAIKAL_CAL_ID') || 'default';\n\nconst toICS = (ev) => {\n  const formatDate = (d) => d.replace(/[-:]/g, '').split('.')[0] + 'Z';\n  return `BEGIN:VCALENDAR\\r\\nVERSION:2.0\\r\\nPRODID:-//SmartHome//Google Sync//EN\\r\\nBEGIN:VEVENT\\r\\nUID:${ev.uid}\\r\\nDTSTART:${formatDate(ev.start)}\\r\\nDTEND:${formatDate(ev.end)}\\r\\nSUMMARY:${ev.summary}\\r\\nDESCRIPTION:${ev.description || ''}\\r\\nEND:VEVENT\\r\\nEND:VCALENDAR`;\n};\n\nconst auth = Buffer.from(`${baikalUser}:${baikalPass}`).toString('base64');\nconst requests = googleEvents.map(ev => {\n  node.warn(`[gcal→baikal] Event ${ev.uid}: ${ev.start} -> ${ev.end}`);\n  return ({\n    url: `${baikalUrl}/calendars/${baikalUser}/${calId}/${ev.uid}.ics`,\n    method: 'PUT',\n    headers: {\n      'Authorization': `Basic ${auth}`,\n      'Content-Type': 'text/calendar; charset=utf-8'\n    },\n    payload: toICS(ev),\n    event: ev\n  });\n});\n\nmsg.requests = requests;\nnode.warn(`[gcal→baikal] Prepared ${requests.length} CalDAV PUT requests`);\nreturn msg;",
-    "outputs": 1,
-    "x": 1010,
-    "y": 200,
-    "wires": [
-      [
-        "gcal_split_requests"
-      ]
-    ]
-  },
-  {
-    "id": "gcal_split_requests",
-    "type": "function",
-    "z": "tab_calendar_google",
-    "name": "Prepare SQLite commands",
-    "func": "const requests = msg.requests || [];\nif (!requests.length) return null;\n\nconst msgs = requests.map(req => {\n  const ics = req.payload;\n  const uri = req.event.uid + '.ics';\n  \n  // Simple hash function\n  let hash = 0;\n  for (let i = 0; i < ics.length; i++) {\n    hash = ((hash << 5) - hash) + ics.charCodeAt(i);\n    hash = hash & hash;\n  }\n  const etag = Math.abs(hash).toString(16).padStart(32, '0');\n  const lastmod = Math.floor(Date.now() / 1000);\n  \n  // Escape for shell\n  const icsEscaped = ics.replace(/'/g, \"'\\\\''\");\n  \n  // docker compose exec from host (Node-RED is in Docker network)\n  const cmd = `docker compose -f /home/pi/smarthome/compose/docker-compose.yml exec -T baikal php -r \"\\$db = new PDO('sqlite:/var/www/baikal/Specific/db/db.sqlite'); \\$stmt = \\$db->prepare('INSERT OR REPLACE INTO calendarobjects (calendarid, uri, calendardata, lastmodified, etag, size, componenttype) VALUES (1, ?, ?, ?, ?, ?, \\\"VEVENT\\\")'); \\$ics = '${icsEscaped}'; \\$stmt->execute(['${uri}', \\$ics, ${lastmod}, '${etag}', strlen(\\$ics)]); echo 'OK:' . \\$stmt->rowCount();\"`;\n  \n  return {\n    payload: cmd,\n    event: req.event\n  };\n});\n\nnode.warn(`[gcal→baikal] Prepared ${msgs.length} SQLite commands`);\nreturn [msgs];",
-    "outputs": 1,
-    "x": 240,
-    "y": 280,
-    "wires": [
-      [
-        "gcal_baikal_put"
-      ]
-    ]
-  },
-  {
-    "id": "gcal_baikal_put",
-    "type": "exec",
-    "z": "tab_calendar_google",
-    "name": "SQLite INSERT (docker compose)",
-    "command": "sh -c",
-    "addpay": "payload",
-    "append": "",
-    "useSpawn": "false",
-    "timer": "",
-    "winHide": false,
-    "oldrc": false,
-    "x": 440,
-    "y": 280,
-    "wires": [
-      [
-        "gcal_baikal_log"
-      ],
-      [],
-      []
-    ]
-  },
-  {
-    "id": "gcal_baikal_log",
-    "type": "function",
-    "z": "tab_calendar_google",
-    "name": "Log Result",
-    "func": "const output = msg.payload || '';\nconst event = msg.event?.summary || 'unknown';\n\nif (output.includes('OK:')) {\n  const rows = output.match(/OK:(\\d+)/);\n  node.warn(`[gcal→baikal] ✅ Synced: ${event} (${rows ? rows[1] : '?'} rows)`);\n} else {\n  node.error(`[gcal→baikal] ❌ Failed: ${event} - ${output}`);\n}\nreturn null;",
-    "outputs": 0,
-    "x": 650,
-    "y": 280,
-    "wires": []
   },
   {
     "id": "gcal_mqtt",

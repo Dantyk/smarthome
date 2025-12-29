@@ -16,7 +16,6 @@ SmartHome je plne funkčný systém automatizácie domácnosti s pokročilým ri
 | **Node-RED** | latest | ✅ Healthy | Riadiaca logika, automatizácia |
 | **Mosquitto MQTT** | 2.x | ✅ Healthy | Message broker |
 | **Next.js UI** | 14.2.35 | ✅ Healthy | Webové rozhranie (port 8088) |
-| **Baïkal CalDAV** | latest | ✅ Healthy | Kalendárový server |
 | **InfluxDB** | 2.x | ✅ Healthy | Časové dáta, metriky |
 | **Grafana** | latest | ✅ Healthy | Vizualizácie, dashboardy |
 | **Redis** | 7-alpine | ✅ Healthy | Cache (weather, config) |
@@ -42,10 +41,10 @@ SmartHome je plne funkčný systém automatizácie domácnosti s pokročilým ri
 - **PRÁZDNINY** - Minimálne vykurovanie (16°C)
 
 #### Kalendárová Integrácia
-- Google Calendar sync (výber primary + sekundárnych kalendárov)
-- Baïkal CalDAV (lokálny server pre manuálne udalosti)
+- Google Calendar sync (primary + sekundárne kalendáre)
 - Automatická detekcia sviatkov (CZ/SK)
 - Cron trigger: daily 00:05 (holiday detection)
+- **Poznámka**: Baïkal CalDAV bol odstránený (nadbytočný, permissions issues)
 
 #### Teploty a Override
 - **modes.yaml** - Centrálna konfigurácia teplôt pre všetky miestnosti
