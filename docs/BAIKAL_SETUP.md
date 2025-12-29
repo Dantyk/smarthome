@@ -100,6 +100,38 @@ database:
 
 ## 🔧 Riešenie problémov
 
+### ⚠️ Known Limitation: CalDAV GET Error
+
+**Symptóm:** 
+```
+curl -u smarthome:smarthome http://localhost:8800/dav.php/calendars/smarthome/default/event.ics
+```
+Vráti: "The FOLDER containing the DB file is not writable"
+
+**Príčina:** 
+Možný bug v Baïkal 0.10.1 - CalDAV PUT operácie fungujú (HTTP 200), ale GET operácie hlásia permissions error aj keď permissions sú správne nastavené.
+
+**Workaround:**
+1. **Google→Baïkal sync funguje** - hlavná funkcionalita OK (CalDAV PUT dostáva HTTP 200)
+2. **Data sú v databáze** - možno čítať cez PHP PDO:
+   ```bash
+   docker compose exec baikal php -r "
+   \$db = new PDO('sqlite:/var/www/baikal/Specific/db/db.sqlite');
+   \$events = \$db->query('SELECT uri, calendardata FROM calendarobjects')->fetchAll();
+   print_r(\$events);
+   "
+   ```
+3. **CalDAV klient** - môže fungovať lepšie ako curl (napr. Thunderbird, Evolution, iOS Calendar)
+4. **PROPFIND môže fungovať** - zoznam eventov:
+   ```bash
+   curl -X PROPFIND -u smarthome:smarthome -H "Depth: 1" \
+     http://localhost:8800/dav.php/calendars/smarthome/default/
+   ```
+
+**Status:** ✅ Sync funguje, ❌ GET cez curl nefunguje (nie kritické pre SmartHome use case)
+
+---
+
 ### Permissions Error pri CalDAV GET
 
 **Symptóm:** "The FOLDER containing the DB file is not writable"
