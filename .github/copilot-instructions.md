@@ -24,7 +24,30 @@ docker compose up -d ui
 
 5) Vsetky hesla a citlive udaje sa maju nacitavat z environment premenych, nikdy nie bytovo v kode alebo konfiguracnych suboroch.
 
-6) **Node-RED flows editing** (`flows/nodered/flows.json`):
+6) **MQTT mosquitto_sub príkazy:**
+   - **NIKDY** nepoužívaj `mosquitto_sub` bez `-C` flagu alebo `timeout` wrappera
+   - Bez `-C` flag príkaz čaká donekonečna na nové správy a NIKDY neskončí
+   - Pipe (`| jq`, `| head`, atď.) nefunguje správne, lebo príkaz neukončí stream
+   
+   **SPRÁVNE použitie:**
+   ```bash
+   # Najlepšie: -C 1 = prijmi 1 retained správu a skonči
+   docker exec compose-mosquitto-1 mosquitto_sub -t 'virt/weather/current' -C 1
+   
+   # S timeout ak správa nemusí existovať: -W 2 = čakaj max 2s
+   docker exec compose-mosquitto-1 mosquitto_sub -t 'virt/weather/current' -C 1 -W 2
+   
+   # Alternatíva: timeout wrapper
+   timeout 3 docker exec compose-mosquitto-1 mosquitto_sub -t 'topic'
+   ```
+   
+   **NESPRÁVNE (NEPOUŽÍVAJ):**
+   ```bash
+   # ❌ Tento príkaz NIKDY neskončí, pipe nefunguje!
+   docker exec compose-mosquitto-1 mosquitto_sub -t 'topic' | jq .
+   ```
+
+7) **Node-RED flows editing** (`flows/nodered/flows.json`):
    - Súbor je **JSON** obsahujúci všetky Node-RED flow konfigurácie
    - **KRITICKÉ**: Pri úprave zachovaj presný JSON formát, vrátane čiarok, zátvoriek a úvodzoviek
    - Každý node má `id`, `type`, `z` (tab id), `name`, `func` (pre function nodes), `wires` (prepojenia)
