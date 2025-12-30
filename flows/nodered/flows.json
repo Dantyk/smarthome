@@ -114,6 +114,13 @@
     "info": "Google Calendar REST sync\nPolling interval: 60s\nDSL parsing for SMH MODE/BOOST/OFFSET events"
   },
   {
+    "id": "tab_calendar_radicale",
+    "type": "tab",
+    "label": "Calendar: Radicale Sync",
+    "disabled": false,
+    "info": "Radicale CalDAV PROPFIND sync\nPolling interval: 60s\nDSL parsing for SMH MODE/BOOST/OFFSET events from manual UI-created events"
+  },
+  {
     "id": "tab_calendar_health_ttl",
     "type": "tab",
     "label": "Health: Calendar Sources & TTL",
@@ -1809,6 +1816,83 @@
     "x": 630,
     "y": 280,
     "wires": []
+  },
+  {
+    "id": "api_calendar_create_in",
+    "type": "http in",
+    "z": "tab_api",
+    "name": "POST /api/calendar/create",
+    "url": "/api/calendar/create",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 500,
+    "wires": [
+      [
+        "api_calendar_create_handler"
+      ]
+    ]
+  },
+  {
+    "id": "api_calendar_create_handler",
+    "type": "function",
+    "z": "tab_api",
+    "name": "Generate ICS",
+    "func": "const { summary, start, end, description } = msg.payload;\n\nif (!summary || !start || !end) {\n    msg.statusCode = 400;\n    msg.payload = { error: 'Missing required fields: summary, start, end' };\n    return msg;\n}\n\nconst uid = `smh-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;\nconst now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';\nconst formatDate = (d) => new Date(d).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';\n\nconst ics = `BEGIN:VCALENDAR\\r\\nVERSION:2.0\\r\\nPRODID:-//SmartHome//Manual Event//EN\\r\\nBEGIN:VEVENT\\r\\nUID:${uid}\\r\\nDTSTAMP:${now}\\r\\nDTSTART:${formatDate(start)}\\r\\nDTEND:${formatDate(end)}\\r\\nSUMMARY:${summary}\\r\\n${description ? `DESCRIPTION:${description}\\r\\n` : ''}END:VEVENT\\r\\nEND:VCALENDAR`;\n\nconst radicaleUrl = env.get('RADICALE_URL') || 'http://radicale:5232';\nconst calId = env.get('RADICALE_CAL_ID') || 'smarthome';\n\nmsg.url = `${radicaleUrl}/${calId}/calendar.ics/${uid}.ics`;\nmsg.method = 'PUT';\nmsg.headers = { 'Content-Type': 'text/calendar; charset=utf-8' };\nmsg.payload = ics;\nmsg._originalPayload = { summary, start, end, description, uid };\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 500,
+    "wires": [
+      [
+        "api_calendar_caldav_put"
+      ]
+    ]
+  },
+  {
+    "id": "api_calendar_caldav_put",
+    "type": "http request",
+    "z": "tab_api",
+    "name": "CalDAV PUT",
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": false,
+    "x": 640,
+    "y": 500,
+    "wires": [
+      [
+        "api_calendar_create_response"
+      ]
+    ]
+  },
+  {
+    "id": "api_calendar_create_response",
+    "type": "function",
+    "z": "tab_api",
+    "name": "Format Response",
+    "func": "const orig = msg._originalPayload;\nconst statusCode = msg.statusCode;\n\nif (statusCode === 201 || statusCode === 204) {\n    msg.statusCode = 201;\n    msg.payload = {\n        status: 'ok',\n        message: 'Event created in Radicale',\n        event: orig,\n        timestamp: new Date().toISOString()\n    };\n    node.warn(`[api] Created calendar event: ${orig.summary}`);\n} else {\n    msg.statusCode = 500;\n    msg.payload = {\n        error: 'Failed to create event',\n        details: msg.payload\n    };\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 850,
+    "y": 500,
+    "wires": [
+      [
+        "api_response"
+      ]
+    ]
   },
   {
     "id": "api_weather_current_in",
@@ -3587,6 +3671,132 @@
     "broker": "mqtt_broker",
     "x": 520,
     "y": 240,
+    "wires": []
+  },
+  {
+    "id": "radicale_cron",
+    "type": "cronplus",
+    "z": "tab_calendar_radicale",
+    "name": "Every 60s (Radicale)",
+    "outputField": "payload",
+    "timeZone": "",
+    "storeName": "",
+    "commandResponseMsgOutput": "output1",
+    "defaultLocation": "",
+    "defaultLocationType": "default",
+    "outputs": 1,
+    "options": [
+      {
+        "name": "radicale_schedule",
+        "topic": "radicale_sync",
+        "payloadType": "default",
+        "payload": "",
+        "expressionType": "cron",
+        "expression": "0 */1 * * * * *",
+        "location": "",
+        "offset": "0",
+        "solarType": "all",
+        "solarEvents": "sunrise,sunset"
+      }
+    ],
+    "x": 180,
+    "y": 100,
+    "wires": [
+      [
+        "radicale_prepare"
+      ]
+    ]
+  },
+  {
+    "id": "radicale_prepare",
+    "type": "function",
+    "z": "tab_calendar_radicale",
+    "name": "Prepare PROPFIND",
+    "func": "const radicaleUrl = env.get('RADICALE_URL') || 'http://radicale:5232';\nconst calId = env.get('RADICALE_CAL_ID') || 'smarthome/calendar.ics';\nmsg.url = `${radicaleUrl}/${calId}/`;\nmsg.method = 'PROPFIND';\nmsg.headers = {\n  'Content-Type': 'application/xml',\n  'Depth': '1'\n};\nmsg.payload = `<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?><propfind xmlns=\\\"DAV:\\\" xmlns:C=\\\"urn:ietf:params:xml:ns:caldav\\\"><prop><C:calendar-data/></prop></propfind>`;\nnode.warn(`[radicale] PROPFIND ${msg.url}`);\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 100,
+    "wires": [
+      [
+        "radicale_propfind"
+      ]
+    ]
+  },
+  {
+    "id": "radicale_propfind",
+    "type": "http request",
+    "z": "tab_calendar_radicale",
+    "name": "CalDAV PROPFIND",
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": false,
+    "x": 580,
+    "y": 100,
+    "wires": [
+      [
+        "radicale_parse"
+      ]
+    ]
+  },
+  {
+    "id": "radicale_parse",
+    "type": "function",
+    "z": "tab_calendar_radicale",
+    "name": "Parse iCalendar",
+    "func": "const xml2js = global.get('xml2js');\nconst parser = new xml2js.Parser({ explicitArray: false });\n\ntry {\n  const result = await parser.parseStringPromise(msg.payload);\n  const responses = result?.multistatus?.response || [];\n  const events = [];\n\n  for (const resp of (Array.isArray(responses) ? responses : [responses])) {\n    const calData = resp?.propstat?.prop?.['calendar-data'];\n    if (!calData) continue;\n\n    // Parse iCalendar format\n    const lines = calData.split('\\n');\n    let event = {};\n    let inEvent = false;\n\n    for (const line of lines) {\n      if (line.startsWith('BEGIN:VEVENT')) {\n        inEvent = true;\n        event = {};\n      } else if (line.startsWith('END:VEVENT')) {\n        if (event.SUMMARY && event.DTSTART && event.DTEND) {\n          events.push({\n            summary: event.SUMMARY,\n            start: event.DTSTART,\n            end: event.DTEND,\n            description: event.DESCRIPTION || '',\n            uid: event.UID || ''\n          });\n        }\n        inEvent = false;\n      } else if (inEvent) {\n        const [key, ...valueParts] = line.split(':');\n        const value = valueParts.join(':');\n        const cleanKey = key.split(';')[0];\n        event[cleanKey] = value;\n      }\n    }\n  }\n\n  msg.payload = events;\n  return msg;\n} catch (err) {\n  node.error('Radicale parse error: ' + err.message);\n  return null;\n}",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 100,
+    "wires": [
+      [
+        "radicale_dsl_parse"
+      ]
+    ]
+  },
+  {
+    "id": "radicale_dsl_parse",
+    "type": "function",
+    "z": "tab_calendar_radicale",
+    "name": "DSL Parse",
+    "func": "const now = new Date();\nconst events = msg.payload || [];\nconst parsed = [];\n\nfor (const evt of events) {\n  const start = new Date(evt.start);\n  const end = new Date(evt.end);\n  \n  if (end < now) continue; // Skip past events\n  \n  const summary = evt.summary || '';\n  const match = summary.match(/SMH\\s+(MODE|BOOST|OFFSET)=(.+)/);\n  \n  if (match) {\n    parsed.push({\n      type: match[1].toLowerCase(),\n      value: match[2].trim(),\n      start: start.toISOString(),\n      end: end.toISOString(),\n      summary: summary,\n      source: 'radicale',\n      uid: evt.uid\n    });\n  }\n}\n\nmsg.payload = parsed;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 980,
+    "y": 100,
+    "wires": [
+      [
+        "radicale_mqtt_out"
+      ]
+    ]
+  },
+  {
+    "id": "radicale_mqtt_out",
+    "type": "mqtt out",
+    "z": "tab_calendar_radicale",
+    "name": "Radicale Events",
+    "topic": "virt/calendar/events/radicale",
+    "qos": "1",
+    "retain": "true",
+    "broker": "mqtt_broker",
+    "x": 1190,
+    "y": 100,
     "wires": []
   },
   {

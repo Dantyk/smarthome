@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 
 import React from 'react';
 import RoomCard from '@/components/RoomCard';
+import CalendarEventForm from '@/components/CalendarEventForm';
 
 type RoomCapabilities = {
   temp_sensor?: boolean;
@@ -33,6 +34,7 @@ export default function Home() {
   const [roomLabels, setRoomLabels] = useState<Record<string, string>>({});
   const [roomIcons, setRoomIcons] = useState<Record<string, string>>({});
   const [currentVersion, setCurrentVersion] = useState<string>('');
+  const [showCalendarForm, setShowCalendarForm] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const colors = useMemo(() => themes[theme], [theme]);
   const router = useRouter();
@@ -486,8 +488,33 @@ export default function Home() {
             <div style={{ fontSize: 12, color: colors.textSecondary }}>Mód</div>
             <div style={{ padding: '6px 10px', borderRadius: 999, background: colors.cardBg, border: `1px solid ${colors.border}`, fontWeight: 600, color: colors.text }}>{mode}</div>
           </div>
+          
+          <button
+            onClick={() => setShowCalendarForm(!showCalendarForm)}
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 8,
+              padding: '6px 12px',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 500,
+              color: colors.text
+            }}
+          >
+            📅 {showCalendarForm ? 'Zavrieť' : 'Nová udalosť'}
+          </button>
         </div>
       </div>
+
+      {showCalendarForm && (
+        <div style={{ marginBottom: 16 }}>
+          <CalendarEventForm 
+            onSuccess={() => setShowCalendarForm(false)}
+            onCancel={() => setShowCalendarForm(false)}
+          />
+        </div>
+      )}
 
       <div style={{
         display: 'grid',
