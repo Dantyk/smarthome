@@ -3608,8 +3608,7 @@
     "y": 100,
     "wires": [
       [
-        "gcal_mqtt",
-        "gcal_late_add"
+        "gcal_mqtt"
       ]
     ]
   },
@@ -3617,8 +3616,8 @@
     "id": "gcal_mqtt",
     "type": "mqtt out",
     "z": "tab_calendar_google",
-    "name": "Calendar Events (merged)",
-    "topic": "virt/calendar/events/current",
+    "name": "Google Events",
+    "topic": "virt/calendar/events/google",
     "qos": "1",
     "retain": "true",
     "broker": "mqtt_broker",
@@ -3772,7 +3771,7 @@
     "type": "function",
     "z": "tab_calendar_radicale",
     "name": "DSL Parse",
-    "func": "const now = new Date();\nconst events = msg.payload || [];\nconst parsed = [];\n\nfunction parseISODate(isoStr) {\n  // Parse iCalendar datetime: 20251230T140000Z -> 2025-12-30T14:00:00Z\n  if (!isoStr) return null;\n  const match = isoStr.match(/(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})Z?/);\n  if (!match) return new Date(isoStr); // fallback to standard parsing\n  return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`);\n}\n\nfor (const evt of events) {\n  const start = parseISODate(evt.start);\n  const end = parseISODate(evt.end);\n  \n  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {\n    node.warn(`[radicale] Invalid date in event: ${evt.uid}`);\n    continue;\n  }\n  \n  if (end < now) continue; // Skip past events\n  \n  const summary = evt.summary || '';\n  const match = summary.match(/SMH\\s+(MODE|BOOST|OFFSET)=(.+)/);\n  \n  if (match) {\n    parsed.push({\n      type: match[1].toLowerCase(),\n      value: match[2].trim(),\n      start: start.toISOString(),\n      end: end.toISOString(),\n      summary: summary,\n      source: 'radicale',\n      uid: evt.uid\n    });\n  }\n}\n\nnode.warn(`[radicale] DSL parsed ${parsed.length} SMH events from ${events.length} total`);\nmsg.payload = JSON.stringify(parsed);\nreturn msg;",
+    "func": "const now = new Date();\nconst events = msg.payload || [];\nconst parsed = [];\n\nfunction parseISODate(isoStr) {\n  // Parse iCalendar datetime: 20251230T140000Z -> 2025-12-30T14:00:00Z\n  if (!isoStr) return null;\n  const match = isoStr.match(/(\\d{4})(\\d{2})(\\d{2})T(\\d{2})(\\d{2})(\\d{2})Z?/);\n  if (!match) return new Date(isoStr); // fallback to standard parsing\n  return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`);\n}\n\nfor (const evt of events) {\n  const start = parseISODate(evt.start);\n  const end = parseISODate(evt.end);\n  \n  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {\n    node.warn(`[radicale] Invalid date in event: ${evt.uid}`);\n    continue;\n  }\n  \n  const summary = evt.summary || '';\n  const description = evt.description || '';\n  const active = now >= start && now <= end;\n  \n  // Create base event in same format as Google Calendar parser\n  const ev = {\n    uid: evt.uid,\n    summary: summary,\n    description: description,\n    start: start.toISOString(),\n    end: end.toISOString(),\n    active: active,\n    type: null,\n    params: {},\n    source: 'radicale'\n  };\n  \n  // Parse SMH DSL commands\n  const mode = summary.match(/SMH\\s+MODE\\s*=\\s*(\\w+)/i);\n  if (mode) { \n    ev.type = 'mode'; \n    ev.params.mode = mode[1].toLowerCase(); \n  }\n  \n  const boost = summary.match(/SMH\\s+BOOST\\s+room\\s*=\\s*(\\w+)(?:\\s+temp\\s*=\\s*([\\d.]+))?(?:\\s+dur\\s*=\\s*(\\d+))?/i);\n  if (boost) { \n    ev.type = 'boost'; \n    ev.params.room = boost[1].toLowerCase(); \n    ev.params.temp = boost[2] ? parseFloat(boost[2]) : null; \n    ev.params.duration = boost[3] ? parseInt(boost[3]) : 60; \n  }\n  \n  const offset = summary.match(/SMH\\s+OFFSET\\s+room\\s*=\\s*(\\w+)\\s+([+-][\\d.]+)(?:\\s+dur\\s*=\\s*(\\d+))?/i);\n  if (offset) { \n    ev.type = 'offset'; \n    ev.params.room = offset[1].toLowerCase(); \n    ev.params.offset = parseFloat(offset[2]); \n    ev.params.duration = offset[3] ? parseInt(offset[3]) : null; \n  }\n  \n  // If no SMH command, it's a regular calendar event\n  if (!ev.type) { \n    ev.type = 'calendar'; \n    ev.params.eventName = summary; \n  }\n  \n  parsed.push(ev);\n}\n\nnode.warn(`[radicale] Parsed ${parsed.length} events from ${events.length} total`);\nmsg.radicaleEvents = parsed;\nmsg.payload = { \n  total: parsed.length, \n  active: parsed.filter(e => e.active).length, \n  events: parsed, \n  timestamp: now.toISOString() \n};\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -4428,6 +4427,100 @@
     "broker": "mqtt_broker",
     "x": 440,
     "y": 340,
+    "wires": []
+  },
+  {
+    "id": "tab_calendar_merge",
+    "type": "tab",
+    "label": "Calendar: Merge",
+    "disabled": false,
+    "info": "Merge Google + Radicale calendar events\nStore in global.calendarEvents\nTrigger mode resolver"
+  },
+  {
+    "id": "merge_google_in",
+    "type": "mqtt in",
+    "z": "tab_calendar_merge",
+    "name": "virt/calendar/events/google",
+    "topic": "virt/calendar/events/google",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 1,
+    "inputs": 0,
+    "x": 180,
+    "y": 100,
+    "wires": [
+      [
+        "merge_trigger"
+      ]
+    ]
+  },
+  {
+    "id": "merge_radicale_in",
+    "type": "mqtt in",
+    "z": "tab_calendar_merge",
+    "name": "virt/calendar/events/radicale",
+    "topic": "virt/calendar/events/radicale",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt_broker",
+    "nl": false,
+    "rap": true,
+    "rh": 1,
+    "inputs": 0,
+    "x": 190,
+    "y": 160,
+    "wires": [
+      [
+        "merge_trigger"
+      ]
+    ]
+  },
+  {
+    "id": "merge_trigger",
+    "type": "function",
+    "z": "tab_calendar_merge",
+    "name": "Merge Google + Radicale",
+    "func": "// Get both sources from global or empty arrays\nconst googleEventsMsg = global.get('googleEvents') || [];\nconst radicaleEventsMsg = global.get('radicaleEvents') || [];\n\n// Update the source that triggered\nif (msg.topic === 'virt/calendar/events/google') {\n  const events = msg.payload?.events || [];\n  global.set('googleEvents', events);\n  node.warn(`[merge] Updated Google events: ${events.length}`);\n} else if (msg.topic === 'virt/calendar/events/radicale') {\n  const events = msg.payload?.events || [];\n  global.set('radicaleEvents', events);\n  node.warn(`[merge] Updated Radicale events: ${events.length}`);\n}\n\n// Re-fetch after update\nconst googleEvents = global.get('googleEvents') || [];\nconst radicaleEvents = global.get('radicaleEvents') || [];\n\n// Merge: combine arrays, deduplicate by uid (Google takes precedence)\nconst uidMap = new Map();\ngoogleEvents.forEach(e => uidMap.set(e.uid, e));\nradicaleEvents.forEach(e => {\n  if (!uidMap.has(e.uid)) {\n    uidMap.set(e.uid, e);\n  }\n});\n\nconst merged = Array.from(uidMap.values());\nconst prev = global.get('calendarEvents') || [];\nconst prevActive = prev.filter(e => e.active).map(e => e.uid);\nconst newly = merged.filter(e => e.active && !prevActive.includes(e.uid));\n\nif (newly.length) {\n  newly.forEach(e => node.warn(`[merge] Newly active: ${e.type} - ${e.summary}`));\n}\n\n// Store merged result\nglobal.set('calendarEvents', merged);\n\nnode.warn(`[merge] Total: ${merged.length} (${merged.filter(e => e.active).length} active)`);\n\n// Prepare outputs\nconst msgMqtt = {\n  payload: {\n    total: merged.length,\n    active: merged.filter(e => e.active).length,\n    events: merged,\n    timestamp: new Date().toISOString()\n  }\n};\n\nconst msgResolver = {\n  topic: 'internal/resolver/trigger',\n  payload: { source: 'calendar_merge', timestamp: new Date().toISOString() }\n};\n\nconst msgLateAdd = null; // TODO: implement late-add for boost/offset/mode\n\nreturn [msgMqtt, msgResolver, msgLateAdd];",
+    "outputs": 3,
+    "x": 490,
+    "y": 130,
+    "wires": [
+      [
+        "merge_mqtt_out"
+      ],
+      [
+        "merge_resolver_trigger"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "merge_mqtt_out",
+    "type": "mqtt out",
+    "z": "tab_calendar_merge",
+    "name": "Calendar Events (current)",
+    "topic": "virt/calendar/events/current",
+    "qos": "1",
+    "retain": "true",
+    "broker": "mqtt_broker",
+    "x": 760,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "merge_resolver_trigger",
+    "type": "mqtt out",
+    "z": "tab_calendar_merge",
+    "name": "Trigger Resolver",
+    "topic": "internal/resolver/trigger",
+    "qos": "0",
+    "retain": "false",
+    "broker": "mqtt_broker",
+    "x": 740,
+    "y": 160,
     "wires": []
   }
 ]
