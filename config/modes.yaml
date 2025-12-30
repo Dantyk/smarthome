@@ -121,6 +121,13 @@ temperature_regimes:
 
 # Módy (pravidlá aktivácie)
 modes:
+  doma:
+    priority: 50
+    activation:
+      calendar_mode: doma  # Manual calendar override (home all day)
+    room_regime:
+      "*": VIKEND
+
   vikend:
     priority: 40
     activation:
