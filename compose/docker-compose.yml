@@ -35,7 +35,7 @@ services:
       - RADICALE_URL=${RADICALE_URL:-http://radicale:5232}
       - RADICALE_USER=${RADICALE_USER:-smarthome}
       - RADICALE_PASS=${RADICALE_PASS:-smarthome}
-      - RADICALE_CAL_ID=${RADICALE_CAL_ID:-smarthome}
+      - RADICALE_CAL_ID=${RADICALE_CAL_ID:-smarthome/calendar.ics}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - PUSHOVER_USER=${PUSHOVER_USER:-}
       - PUSHOVER_TOKEN=${PUSHOVER_TOKEN:-}
