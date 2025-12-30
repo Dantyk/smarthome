@@ -32,6 +32,10 @@ services:
       - NR_CRED_SECRET=${NR_CRED_SECRET:-change-me-in-production}
       - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID:-}
+      - RADICALE_URL=${RADICALE_URL:-http://radicale:5232}
+      - RADICALE_USER=${RADICALE_USER:-smarthome}
+      - RADICALE_PASS=${RADICALE_PASS:-smarthome}
+      - RADICALE_CAL_ID=${RADICALE_CAL_ID:-smarthome}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - PUSHOVER_USER=${PUSHOVER_USER:-}
       - PUSHOVER_TOKEN=${PUSHOVER_TOKEN:-}
@@ -232,6 +236,22 @@ services:
       retries: 3
       start_period: 10s
 
+  radicale:
+    image: tomsquest/docker-radicale:latest
+    restart: unless-stopped
+    ports: ["5232:5232"]
+    environment:
+      - TZ=Europe/Bratislava
+    volumes:
+      - ./config/radicale:/config:ro
+      - radicale_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5232/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   node-exporter:
     image: prom/node-exporter:latest
     restart: unless-stopped
@@ -283,3 +303,4 @@ volumes:
   prometheus_data:
   alertmanager_data:
   redis_data:
+  radicale_data:
