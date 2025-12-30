@@ -84,7 +84,7 @@ jobs:
       - name: Start Docker Compose services
         run: |
           cd compose
-          docker compose up -d mosquitto nodered baikal
+          docker compose up -d mosquitto nodered
       
       - name: Wait for services to be healthy
         run: |
