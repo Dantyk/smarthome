@@ -29,12 +29,12 @@ services:
         condition: service_healthy
     environment:
       - TZ=Europe/Bratislava
-      - NR_CRED_SECRET=${NR_CRED_SECRET:-change-me-in-production}
+      - NR_CRED_SECRET=${NR_CRED_SECRET:?NR_CRED_SECRET must be set in .env}
       - GOOGLE_CALENDAR_API_KEY=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_CALENDAR_ID=${GOOGLE_CLIENT_ID:-}
       - RADICALE_URL=${RADICALE_URL:-http://radicale:5232}
       - RADICALE_USER=${RADICALE_USER:-smarthome}
-      - RADICALE_PASS=${RADICALE_PASS:-smarthome}
+      - RADICALE_PASS=${RADICALE_PASS:?RADICALE_PASS must be set in .env}
       - RADICALE_CAL_ID=${RADICALE_CAL_ID:-smarthome/calendar.ics}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - PUSHOVER_USER=${PUSHOVER_USER:-}
@@ -112,11 +112,11 @@ services:
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER:-admin}
-      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD:-admin123}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD:?INFLUX_PASSWORD must be set in .env}
       - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG:-Home}
       - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET:-smarthome}
       - DOCKER_INFLUXDB_INIT_RETENTION=30d
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN:-changeme}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN:?INFLUX_TOKEN must be set in .env}
     volumes:
       - influxdb_data:/var/lib/influxdb2
 
@@ -128,7 +128,7 @@ services:
     depends_on: [influxdb]
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD must be set in .env}
       - GF_INSTALL_PLUGINS=
       - INFLUX_ORG=${INFLUX_ORG:-Home}
       - INFLUX_BUCKET=${INFLUX_BUCKET:-smarthome}

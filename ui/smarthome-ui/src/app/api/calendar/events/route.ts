@@ -20,8 +20,15 @@ export async function GET(request: NextRequest) {
   try {
     // Fetch from Baïkal CalDAV
     const baikalUrl = process.env.BAIKAL_CALDAV_URL || 'http://baikal:80/dav.php/calendars/smarthome/default';
-    const baikalUser = process.env.BAIKAL_USER || 'smarthome';
-    const baikalPassword = process.env.BAIKAL_PASSWORD || 'smarthome';
+    const baikalUser = process.env.BAIKAL_USER;
+    const baikalPassword = process.env.BAIKAL_PASSWORD;
+
+    if (!baikalUser || !baikalPassword) {
+      return NextResponse.json(
+        { error: 'CalDAV credentials not configured' },
+        { status: 503 }
+      );
+    }
     
     const auth = Buffer.from(`${baikalUser}:${baikalPassword}`).toString('base64');
     

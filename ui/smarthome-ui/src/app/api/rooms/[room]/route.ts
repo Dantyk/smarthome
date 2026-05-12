@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { publish } from '@/lib/mqtt';
 
 type RouteParams = {
-  params: {
+  params: Promise<{
     room: string;
-  };
+  }>;
 };
 
 /**
@@ -15,7 +15,7 @@ export async function GET(
   request: NextRequest,
   { params }: RouteParams
 ) {
-  const { room } = params;
+  const { room } = await params;
   
   // Validate room name
   const validRooms = ['spalna', 'detska', 'obyvacka', 'kuchyna', 'kupelna'];
@@ -42,7 +42,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: RouteParams
 ) {
-  const { room } = params;
+  const { room } = await params;
   
   // Validate room name
   const validRooms = ['spalna', 'detska', 'obyvacka', 'kuchyna', 'kupelna'];
