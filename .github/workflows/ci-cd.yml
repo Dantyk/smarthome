@@ -81,6 +81,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
+      - name: Create CI .env file
+        run: |
+          cat > compose/.env << 'EOF'
+          NR_CRED_SECRET=ci-test-secret-not-for-production
+          RADICALE_PASS=ci-test-pass
+          INFLUX_PASSWORD=ci-test-influx-pass
+          INFLUX_TOKEN=ci-test-influx-token
+          GRAFANA_PASSWORD=ci-test-grafana-pass
+          MQTT_USER=nodered
+          MQTT_PASSWORD=test_password_ci
+          EOF
+
       - name: Start Docker Compose services
         run: |
           cd compose
@@ -128,6 +140,18 @@ jobs:
         with:
           node-version: '20'
       
+      - name: Create CI .env file
+        run: |
+          cat > compose/.env << 'EOF'
+          NR_CRED_SECRET=ci-test-secret-not-for-production
+          RADICALE_PASS=ci-test-pass
+          INFLUX_PASSWORD=ci-test-influx-pass
+          INFLUX_TOKEN=ci-test-influx-token
+          GRAFANA_PASSWORD=ci-test-grafana-pass
+          MQTT_USER=nodered
+          MQTT_PASSWORD=test_password_ci
+          EOF
+
       - name: Start full stack
         run: |
           cd compose

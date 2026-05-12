@@ -149,6 +149,11 @@ jobs:
           REDIS_HOST=redis
           REDIS_PORT=6379
           TZ=Europe/Bratislava
+          NR_CRED_SECRET=ci-test-secret-not-for-production
+          RADICALE_PASS=ci-test-pass
+          INFLUX_PASSWORD=ci-test-influx-pass
+          INFLUX_TOKEN=ci-test-influx-token
+          GRAFANA_PASSWORD=ci-test-grafana-pass
           EOF
       
       - name: Build UI

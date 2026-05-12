@@ -81,6 +81,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Create CI .env for validation
+        run: |
+          cat > compose/.env << 'EOF'
+          NR_CRED_SECRET=ci-test-secret-not-for-production
+          RADICALE_PASS=ci-test-pass
+          INFLUX_PASSWORD=ci-test-influx-pass
+          INFLUX_TOKEN=ci-test-influx-token
+          GRAFANA_PASSWORD=ci-test-grafana-pass
+          EOF
+
       - name: Lint Docker Compose
         run: |
           docker compose -f compose/docker-compose.yml config > /dev/null
