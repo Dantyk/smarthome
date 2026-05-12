@@ -13,10 +13,13 @@
   "keywords": ["testing", "integration", "e2e"],
   "author": "Dantyk",
   "license": "MIT",
+  "overrides": {
+    "serialize-javascript": "^7.0.5"
+  },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
     "mqtt": "^5.3.0",
-    "axios": "^1.6.0",
+    "axios": "^1.7.9",
     "chai": "^4.3.10",
     "mocha": "^10.2.0"
   }
